@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <meta charset="UTF-8"/>
+    <title>simple threejs design preview</title>
+    <script src="https://code.jquery.com/jquery-3.1.0.min.js" integrity="sha256-cCueBR6CsyA4/9szpPfrX3s49M9vUU5BgtiJj06wt/s=" crossorigin="anonymous"></script>
+    <script src="https://cdn.jsdelivr.net/lodash/4.16.4/lodash.min.js"></script>
+    <script src="js/three.js"></script>
+    <script src="js/preview.js"></script>
+    <script src="js/meshControl.js"></script>
+    <script src="js/cameraDolly.js"></script>
+    <script type="text/javascript">
+    $(document).ready( function(){
+    
+      var renderer = $('.preview');
+      var preview = new DesignPreview(['Butterflies-V1S13b.png', 'FireTights-V1S13b.jpg'], renderer);
+      
+      renderer.on('preview.load', function(){ renderer.addClass("show-preview"); });
+      
+      $('.switch').click( function(){
+        preview.toggleModels();
+      });
+      
+      $('.show-texture').click( function(){
+        index = $(this).data('texture');
+        preview.switchTexture(index);
+      });
+    });
+    </script>
+    
+    <style type="text/css">
+     .preview { 
+	    height: 100%;
+	    width: 50%;
+	    opacity: 0;
+	    
+	    -webkit-transition: opacity .3s ease-in-out;
+        -moz-transition: opacity .3s ease-in-out;
+        -o-transition: opacity .3s ease-in-out;
+        transition: opacity .3s ease-in-out;
+	  }
+	  
+	  canvas {
+	    width: 100%;
+	    height: 100%;
+	   }
+	   
+	   .show-preview {
+	     opacity: 1;
+	   }
+    </style>
+</head>
+
+<body>
+  <h1>Design Preview</h1>
+
+  <div class="preview"></div>
+
+  <div class="controls">
+   <button class="switch">Switch Model</button>
+   <button class="show-texture" data-texture="Butterflies-V1S13b.png">Butterflies</button>
+   <button class="show-texture" data-texture="FireTights-V1S13b.jpg">Fire</button>
+  </div>
+  
+  <h2>Usage</h2>
+  
+
+</body>
+
+</html>
+  
+  
