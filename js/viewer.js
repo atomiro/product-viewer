@@ -1,4 +1,4 @@
-function DesignPreview(textureArray, element, options){
+function Viewer(textureArray, element, options){
 
   var settings = {
     assetPath: "assets/",
@@ -7,7 +7,8 @@ function DesignPreview(textureArray, element, options){
     aspectRatio: 4/5,
     cameraXPosition: -50,
     cameraYPosition: 8.5,
-    initialRotation: -90
+    initialRotation: -90,
+    sceneBackgroundColor: "rgb(100, 100, 100)"
   }
 
   this.create = function(){
@@ -31,7 +32,7 @@ function DesignPreview(textureArray, element, options){
       plusModel.visible = false;
     }
     
-    event = $.Event('preview.togglemodel');  
+    event = $.Event('viewer.togglemodel');  
     rendererElement.trigger(event);
   }
   
@@ -43,7 +44,7 @@ function DesignPreview(textureArray, element, options){
       }
     }
     
-    event = $.Event('preview.switchtexture');  
+    event = $.Event('viewer.switchtexture');  
     rendererElement.trigger(event);
   }
   
@@ -90,7 +91,7 @@ function DesignPreview(textureArray, element, options){
     rendererElement.append(renderer.domElement);
     
     scene = sceneFile;
-    scene.background = new THREE.Color(0xEEEEEE);
+    scene.background = new THREE.Color(settings.sceneBackgroundColor);
     
     textureManager = new THREE.LoadingManager();
     
@@ -103,7 +104,7 @@ function DesignPreview(textureArray, element, options){
       setupCamera();
       render(); 
       
-      event = $.Event('preview.load');  
+      event = $.Event('viewer.loaded');  
       rendererElement.trigger(event);
     }
  

@@ -1,9 +1,20 @@
+//
+// Rotate multiple meshes by clicking and dragging side to side
+//
 function MeshControl(meshes, rendererElement){
    var mouseDown = false;
    var mouseX = 0;
    var mouseY = 0; 
-   var currentAngle = 0;
    this.meshes = meshes;
+   this.rotationSpeed = .8;
+   
+   this.setRotationSpeed = function(speed){
+     this.rotationSpeed = ControlUtils.clamp(speed, 0, 1);
+   }
+   
+   //INTERNALS 
+      
+   var obj = this;
    
    init();
    
@@ -15,9 +26,8 @@ function MeshControl(meshes, rendererElement){
    
   function onMouseMove(event) {
      var delta = getMouseMoveDelta(event);
-     deltaX = clamp(delta[0], -30, 30);
-     console.log(deltaX);
-     var angle = (deltaX * Math.PI / 180) * .8;
+     var deltaX = ControlUtils.clamp(delta[0], -30, 30);
+     var angle = (deltaX * Math.PI / 180) * obj.rotationSpeed;
      rotateTo(angle);
    }
    
@@ -50,11 +60,6 @@ function MeshControl(meshes, rendererElement){
         
         return [deltaX, deltaY];
    } 
-   
-  function clamp(value, min, max){
-    var clampedValue = (value > max) ? max : (value < min) ? min : value; 
-    return clampedValue;
-  }
    
    return this;
 

@@ -1,3 +1,6 @@
+//
+// Zoom with scroll wheel and vertical pan by clicking a dragging up and down
+//
 function CameraDollyControl(camera, rendererElement){
   //detect camera's coordinate quadrant
   this.minZoomDistance = -20;
@@ -44,9 +47,8 @@ function CameraDollyControl(camera, rendererElement){
   function onMouseWheel(event){
     if (mouseIn){
       event.preventDefault();
-      var deltaY = clamp(event.originalEvent.deltaY, -100, 100); 
-      cameraDist -= deltaY * .2;
-      console.log(deltaY);  
+      var deltaY = ControlUtils.clamp(event.originalEvent.deltaY, -100, 100); 
+      cameraDist -= deltaY * .2; 
       constrainZoom(obj.minZoomDistance, obj.maxZoomDistance);
       camera.position.x = cameraDist;
       centerCamera(); 
@@ -72,7 +74,7 @@ function CameraDollyControl(camera, rendererElement){
   function centerCamera(){
     var totalZoomDist = Math.abs(obj.minZoomDistance - obj.maxZoomDistance);
     var zoomLevel = Math.abs(cameraDist - obj.minZoomDistance) / totalZoomDist;
-    cameraHeight = lerp(cameraHeight, initHeight, zoomLevel);
+    cameraHeight = ControlUtils.lerp(cameraHeight, initHeight, zoomLevel);
     camera.position.y = cameraHeight;
     camera.lookAt(new THREE.Vector3(0,(cameraHeight),0));
   }
@@ -83,7 +85,7 @@ function CameraDollyControl(camera, rendererElement){
   }
       
   function constrainVerticalPan(min, max){
-     cameraHeight = clamp(cameraHeight, min, max);
+     cameraHeight = ControlUtils.clamp(cameraHeight, min, max);
   }
   
   function getMouseMoveDelta(event) {
@@ -99,17 +101,6 @@ function CameraDollyControl(camera, rendererElement){
     mouseY = event.pageY;  
     return [deltaX, deltaY];
   } 
-  
-  function clamp(value, min, max){
-    var clampedValue = (value > max) ? max : (value < min) ? min : value; 
-    return clampedValue;
-  }
-  
-  function lerp(p0, p1, progress){
-    clamp(progress, 0, 1);
-    var pu = p0 + (p1 - p0) * progress; 
-    return pu;
-  }
   
   return this;
 

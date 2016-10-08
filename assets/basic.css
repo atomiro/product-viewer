@@ -1,0 +1,30 @@
+body{
+  background-color: rgb(23, 24, 20);
+  color: #eee;
+  font-family: "Arial", sans-serif;
+}
+
+ul {
+  list-style-type: none;
+}
+
+ul li {
+  padding-bottom: 5px;
+}
+
+kbd {
+  background-color: #272822;
+  padding: 8px;
+  border-radius: 5px;
+}
+
+.container {
+  width: 80%;
+  margin: 10px auto 100px auto;
+}
+
+p {
+  max-width: 44em;
+  font-size: 18px;
+  line-height: 1.5;
+}

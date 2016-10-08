@@ -4,27 +4,33 @@
 <head>
     <meta charset="UTF-8"/>
     <title>simple threejs design preview</title>
+    <link href="highlight/prism.css" rel="stylesheet" type="text/css"/>
+    <link href="assets/basic.css" rel="stylesheet" type="text/css"/>
     <script src="https://code.jquery.com/jquery-3.1.0.min.js" integrity="sha256-cCueBR6CsyA4/9szpPfrX3s49M9vUU5BgtiJj06wt/s=" crossorigin="anonymous"></script>
     <script src="https://cdn.jsdelivr.net/lodash/4.16.4/lodash.min.js"></script>
     <script src="js/three.js"></script>
-    <script src="js/preview.js"></script>
+    <script src="js/viewer.js"></script>
     <script src="js/meshControl.js"></script>
     <script src="js/cameraDolly.js"></script>
+    <script src="js/utils.js"></script>
     <script type="text/javascript">
     $(document).ready( function(){
     
-      var renderer = $('.preview');
-      var preview = new DesignPreview(['Butterflies-V1S13b.png', 'FireTights-V1S13b.jpg'], renderer);
+      var settings = { sceneBackgroundColor: "rgb(96, 97, 91)" }
+      var viewerDiv = $('.preview');
+      var viewer = new Viewer(['Butterflies-V1S13b.png', 'FireTights-V1S13b.jpg'], viewerDiv, settings);
       
-      renderer.on('preview.load', function(){ renderer.addClass("show-preview"); });
+      viewerDiv.on('viewer.loaded', function(){ 
+        $(this).addClass("show-viewer"); 
+      });
       
       $('.switch').click( function(){
-        preview.toggleModels();
+        viewer.toggleModels();
       });
       
       $('.show-texture').click( function(){
-        index = $(this).data('texture');
-        preview.switchTexture(index);
+        textureFile = $(this).data('texture');
+        viewer.switchTexture(textureFile);
       });
     });
     </script>
@@ -46,14 +52,15 @@
 	    height: 100%;
 	   }
 	   
-	   .show-preview {
+	   .show-viewer {
 	     opacity: 1;
 	   }
     </style>
 </head>
 
 <body>
-  <h1>Design Preview</h1>
+  <div class="container">
+  <h1>Design Viewer</h1>
 
   <div class="preview"></div>
 
@@ -63,9 +70,165 @@
    <button class="show-texture" data-texture="FireTights-V1S13b.jpg">Fire</button>
   </div>
   
-  <h2>Usage</h2>
+  <h2>Requirements</h2>
+  <p>
+   The Viewer requires <a href="http://jquery.com/download/#using-jquery-with-a-cdn">jQuery</a> and <a href="https://lodash.com/docs/4.16.4">lodash</a>, please include these in your document before including /releases/viewer.js. Only debounce is used from lodash, so feel free to use an exported module of lodash's debounce to save kB. 
+  </p>
+ <h2> Basic Usage </h2> 
+ <p>  
+   The most basic use of the Viewer requires just a single div's worth of markup.
+   This container div is where the Viewer's canvas element will be appended. 
+ </p>
+ <p>  
+   Initialize the Viewer with an array of texture file names. Textures can be jpg or png.  
+   The Viewer will look in /assets by default. See <a href="#settings"> settings </a> to on how to change this and other defaults. 
+  </p>
   
+  <pre class="language-javascript">
+    <code>
+      new Viewer([textureArray], container, settingsObject); 
+    </code>
+  </pre>
+  
+  <h3> Example </h3> 
+<pre class="language-markup">
+  <code class="language-markup">
+    <xmp>
+    <!DOCTYPE html>
+    <html>
+    <head>
+        <!-- jQuery -->
+        <script src="https://code.jquery.com/jquery-3.1.0.min.js"
+                integrity="sha256-cCueBR6CsyA4/9szpPfrX3s49M9vUU5BgtiJj06wt/s="
+                crossorigin="anonymous">
+        </script>
+        <!-- lodash -->
+        <script src="https://cdn.jsdelivr.net/lodash/4.16.4/lodash.min.js"></script>
+        <!-- viewer -->
+        <script src="js/viewer.js"></script>
+        <!-- initialize viewer -->
+        <script type="text/javascript">
+          $(document).ready( function(){
+          
+            var container = $('.viewer-container');
+            var viewer = new Viewer(['Butterflies-V1S13b.png','FireTights-V1S13b.jpg'],
+                                     container);
+            });
+        </script>
+    </head>
+    <body>
+        
+      <div class="viewer-container">
+        <!-- THREE.js will add a canvas element here on init -->
+      </div>
+           
+    </body>
+        
+    </html>
+   </xmp>
+   </code>
+</pre>
+  </p>
+  
+<a name="settings"><h2>Settings</h2></a>
+ <p> Use the Viewer's settings to set the path to your texture assets and to adjust the way the scene is rendered including camera position and background color. All settings are optional but setting the asset path is recommended. </p>
+  <h3>Example</h3>  
+  <pre class="language-javascript">
+    <code>
+    var settings = {
+      assetPath: "assets/",
+      sceneBackgroundColor: "rgb(0, 0, 0)"
+    }
+    
+    var viewer = new Viewer(['Butterflies-V1S13b.png', 'FireTights-V1S13b.jpg'],
+                            container, 
+                            settings);
+    </code>
+  </pre>
+  
+  <h3> Viewer Settings and Defaults </h3>
+    <h4>File Settings</h4>
+    <ul>
+    <li> 
+      <p><kbd>assetPath</kbd> default "assets/"</p>
+    </li>
+    <li> 
+      <p><kbd>sceneFile</kbd> default "assets/models_scene.json"</p>
+      <p>Scene files should be kept somewhere easily accessible so they can be swapped out.</p>
+    </li>
+    </ul>
+    
+    <h4> Scene Settings</h4>
+    <ul>
+    <li> 
+      <p><kbd>aspectRatio</kbd> default 4/5</p>
+      <p>Canvas and camera aspect ratio.</p>
+    </li>
+    <li> 
+      <p><kbd>cameraXPosition</kbd> default -50</p>
+    </li>
+    <li> 
+      <p><kbd>cameraYPosition</kbd> default 8.5</p>
+    </li>
+      <li> 
+      <p><kbd>fov</kbd> default 23</p>
+      <p>Camera field of view, default is Maya's camera angle.</p>
+    </li>
+    <li> 
+      <p><kbd>initialRotation</kbd> default -90</p>
+    </li>
+    <li> 
+      <p><kbd>sceneBackgroundColor</kbd> default "rgb(100, 100, 100)"</p>
+      <p>Colors are in css rgb or hsl syntax.</p>
+    </li>
+    </ul>
+    
+    
+<h2>Methods</h2>
+<ul>
+  <li>
+   <p><kbd>.switchTexture(name)</kbd></p>
+   <p>Takes a filename and switches the texture to use that file.</p>
+   <pre class="language-javascript">
+     <code>
+       viewer.switchTexture('FireTights-VS13b.jpg');
+     </code>
+   </pre>
+  </li>
+  <li>
+   <p><kbd>.toggleModels()</kbd></p>
+   <p>Toggle between straight and curvy style meshes.</p>
+  </li>
+</ul> 
 
+<h2> Events </h2>
+ <p> Listen for events on the DOM element you initialized the Viewer with. </p>
+ <h3> Example </h3>
+ <pre class="language-javascript">
+    <code>
+        container.on('viewer.loaded', function(){ 
+            $(this).addClass("show-viewer"); 
+        });
+    </code>
+  </pre>      
+  <ul>
+    <li>
+      <p><kbd>viewer.loaded</kbd></p>
+      <p>Event fires when all the texture files in the array have completed loading.</p>
+      </pre>
+    </li>
+    <li>
+      <p><kbd>viewer.switchtexture</kbd></p>
+      <p>Event is fired when <kbd>switchTexture(name)</kbd> completes.</p>
+    </li>
+    <li>
+      <p><kbd>viewer.togglemodel</kbd></p>
+      <p>Event fires when <kbd>toggleModels()</kbd> completes.</p>
+    </li>
+  </ul>  
+    
+  </div>
+<script src="highlight/prism.js"></script>
 </body>
 
 </html>
