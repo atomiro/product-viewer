@@ -23,6 +23,14 @@ kbd {
   margin: 10px auto 100px auto;
 }
 
+a {
+  color: #e5e5e5;
+}
+
+a:visited {
+  color: #777;
+}
+
 p {
   max-width: 44em;
   font-size: 18px;

@@ -16,9 +16,10 @@
     <script type="text/javascript">
     $(document).ready( function(){
     
-      var settings = { sceneBackgroundColor: "rgb(96, 97, 91)" }
+      //var settings = { sceneBackgroundColor: "rgb(96, 97, 91)" }
+      var settings = { sceneBackgroundColor: "rgb(0, 0, 0)" }
       var viewerDiv = $('.preview');
-      var viewer = new Viewer(['Butterflies-V1S13b.png', 'FireTights-V1S13b.jpg'], viewerDiv, settings);
+      var viewer = new Viewer(['Butterflies-V1S13b.png', 'FireTights-V1S13b-3.jpg'], viewerDiv, settings);
       
       viewerDiv.on('viewer.loaded', function(){ 
         $(this).addClass("show-viewer"); 
@@ -188,7 +189,10 @@
 <ul>
   <li>
    <p><kbd>.switchTexture(name)</kbd></p>
-   <p>Takes a filename and switches the texture to use that file.</p>
+   <p>
+   Takes a filename and switches the texture to use that file. You may only 
+   switch between texture files the viewer has been initialized with. 
+   </p>
    <pre class="language-javascript">
      <code>
        viewer.switchTexture('FireTights-VS13b.jpg');

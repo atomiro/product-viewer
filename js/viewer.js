@@ -48,6 +48,8 @@ function Viewer(textureArray, element, options){
     rendererElement.trigger(event);
   }
   
+  this.addTexture = loadTexture;
+  
   this.create();
   
   // INTERNALS 
@@ -95,17 +97,28 @@ function Viewer(textureArray, element, options){
     
     textureManager = new THREE.LoadingManager();
     
-    for (var i =0; i < textureArray.length; i++){
-      loadTexture(textureArray[i]);
+    textureManager.onError = function(event) {
+      console.log("manager error");
+      console.log(event);
+    }
+    
+    textureManager.onProgress = function(event) {
+      console.log("manager progress");
+      console.log(event);
     }
     
     textureManager.onLoad = function() {
+      console.log("manager success");
       setupMeshes();
       setupCamera();
       render(); 
       
       event = $.Event('viewer.loaded');  
       rendererElement.trigger(event);
+    }
+    
+    for (var i =0; i < textureArray.length; i++){
+      loadTexture(textureArray[i]);
     }
  
   }
@@ -150,19 +163,21 @@ function Viewer(textureArray, element, options){
       
     textureLoader.load(texturePath,
       function(texture){
-        texture.name = textureFileName;
-        storeTexture(texture);
+        console.log("loader success");
+        storeTexture(texture, textureFileName);
       },
       function(xhr){
          console.log("Texture " + textureFileName + " " + Math.round(xhr.loaded / xhr.total * 100) + "%" );
       },
       function(xhr){
+        console.log("loader error");
         console.log(xhr);
       }
     );
   }
   
-  function storeTexture(texture){
+  function storeTexture(texture, filename){
+    texture.name = filename;
     textures.push(texture);
   }
   
