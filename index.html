@@ -8,12 +8,10 @@
     <link href="assets/basic.css" rel="stylesheet" type="text/css"/>
     <script src="https://code.jquery.com/jquery-3.1.0.min.js" integrity="sha256-cCueBR6CsyA4/9szpPfrX3s49M9vUU5BgtiJj06wt/s=" crossorigin="anonymous"></script>
     <script src="https://cdn.jsdelivr.net/lodash/4.16.4/lodash.min.js"></script>
-    <script src="js/three.js"></script>
-    <script src="js/viewer.js"></script>
-    <script src="js/meshControl.js"></script>
-    <script src="js/cameraDolly.js"></script>
-    <script src="js/utils.js"></script>
+    <script src="js/vendor/three.js"></script>
+    <script src="release/viewer.js"></script>
     <script type="text/javascript">
+    
     $(document).ready( function(){
     
       var settings = { sceneBackgroundColor: "rgb(0, 0, 0)" }
@@ -74,21 +72,28 @@
   <p>
    The Viewer requires <a href="http://jquery.com/download/#using-jquery-with-a-cdn">jQuery</a> and <a href="https://lodash.com/docs/4.16.4">lodash</a>, please include these in your document before including /releases/viewer.js. Only debounce is used from lodash, so feel free to use an exported module of lodash's debounce to save kB. 
   </p>
+  <div class=note>
+    <h3>Why JQuery?</h3>
+    <p>JQuery normalizes inputs and provides the most accurate element width calculation across browsers. While I tried to avoid using it to minimize the js asset load, ultimately that accuracy outweighed load time consideration, and if the viewer is used in the shop jQuery will already be available anyway.</p>
+ </div>
  <h2> Basic Usage </h2> 
- <p>  
-   The most basic use of the Viewer requires just a single div's worth of markup.
-   This container div is where the Viewer's canvas element will be appended. 
- </p>
- <p>  
-   Initialize the Viewer with an array of texture file names. Textures can be jpg or png.  
-   The Viewer will look in /assets by default. See <a href="#settings"> settings </a> to on how to change this and other defaults. 
-  </p>
-  
   <pre class="language-javascript">
     <code>
       new Viewer([textureArray], container, settingsObject); 
     </code>
   </pre>
+  <p>  
+   Initialize the Viewer with an array of texture file names. Textures can be jpg or png.  
+   The Viewer will look in /assets by default. See <a href="#settings"> settings </a> to on how to change this and other defaults. 
+  </p>
+ <p>  
+   The most basic use of the Viewer requires just a single div's worth of markup.
+   This container div is where the Viewer's canvas element will be appended. 
+ </p>
+  <div class=note>
+    <h3>Use JQuery to select your container element</h3>
+    <p>The viewer init function assumes you're using JQuery to select the element to render within. Using JQuery objects allows accurate width calculations. The canvas will render within the full width of its container element. The height is width x the aspect ratio, with the default aspect ratio of 4/5.</p>
+ </div>
   
   <h3> Example </h3> 
 <pre class="language-markup">
@@ -105,7 +110,7 @@
         <!-- lodash -->
         <script src="https://cdn.jsdelivr.net/lodash/4.16.4/lodash.min.js"></script>
         <!-- viewer -->
-        <script src="js/viewer.js"></script>
+        <script src="release/viewer.js"></script>
         <!-- initialize viewer -->
         <script type="text/javascript">
           $(document).ready( function(){
@@ -136,7 +141,7 @@
   <pre class="language-javascript">
     <code>
     var settings = {
-      assetPath: "assets/",
+      assetPath: "set-your-own/asset/path/",
       sceneBackgroundColor: "rgb(0, 0, 0)"
     }
     
