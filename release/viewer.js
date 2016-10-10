@@ -187,7 +187,7 @@ function MeshControl(meshes, rendererElement){
 
   var settings = {
     assetPath: "assets/",
-    sceneFileName: "models_scene.json",
+    sceneFile: "models_scene.json",
     fov: 23,
     aspectRatio: 4/5,
     cameraXPosition: -50,
@@ -258,13 +258,13 @@ function MeshControl(meshes, rendererElement){
   
   function loadScene(){
     // load scene json file created with three.js editor
-    var sceneFile = settings.assetPath + settings.sceneFileName;
+    var sceneFile = settings.assetPath + settings.sceneFile;
     var objloader = new THREE.ObjectLoader();
         
     objloader.load(sceneFile,
       setup,
       function(xhr){
-        console.log("Scene " + Math.round(xhr.loaded / xhr.total * 100) + "%" );
+        console.log("Scene " + sceneFile + " "+ Math.round(xhr.loaded / xhr.total * 100) + "%" );
       },
       function(xhr){
         console.log(xhr);

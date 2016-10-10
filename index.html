@@ -1,7 +1,8 @@
 <!DOCTYPE html>
 <html>
 
-<head>
+<head> 
+    <meta name="robots" content="noindex" />
     <meta charset="UTF-8"/>
     <title>simple threejs design preview</title>
     <link href="highlight/prism.css" rel="stylesheet" type="text/css"/>
@@ -14,7 +15,9 @@
     
     $(document).ready( function(){
     
-      var settings = { sceneBackgroundColor: "rgb(0, 0, 0)" }
+      var settings = { 
+        sceneBackgroundColor: "rgb(0, 0, 0)" 
+      }
       var viewerDiv = $('.preview');
       var viewer = new Viewer(['Butterflies-V1S13b.png', 'FireTights-V1S13b.jpg'], viewerDiv, settings);
       
@@ -66,11 +69,21 @@
    <button class="switch">Switch Model</button>
    <button class="show-texture" data-texture="Butterflies-V1S13b.png">Butterflies</button>
    <button class="show-texture" data-texture="FireTights-V1S13b.jpg">Fire</button>
+   
+   <h3>Controls</h3>
+   <p>
+     Scroll wheel or two fingered scroll to zoom in and out.
+   </p>
+   <p>
+     Click + drag to rotate the model and pan the camera. 
+   </p>
   </div>
+  
+  
   
   <h2>Requirements</h2>
   <p>
-   The Viewer requires <a href="http://jquery.com/download/#using-jquery-with-a-cdn">jQuery</a> and <a href="https://lodash.com/docs/4.16.4">lodash</a>, please include these in your document before including /releases/viewer.js. Only debounce is used from lodash, so feel free to use an exported module of lodash's debounce to save kB. 
+   The Viewer requires <a href="http://jquery.com/download/#using-jquery-with-a-cdn">jQuery</a> and <a href="https://lodash.com/docs/4.16.4">lodash</a>, please include these in your document before including releases/viewer.js. Only debounce is used from lodash, so feel free to use an exported module of lodash's debounce to save kB. 
   </p>
   <div class=note>
     <h3>Why JQuery?</h3>
@@ -181,6 +194,7 @@
     </li>
     <li> 
       <p><kbd>initialRotation</kbd> default -90</p>
+      <p>Set the meshes in the scene to this rotation.</p>
     </li>
     <li> 
       <p><kbd>sceneBackgroundColor</kbd> default "rgb(100, 100, 100)"</p>
