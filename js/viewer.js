@@ -54,6 +54,8 @@ function Viewer(textureArray, element, options){
   
   // INTERNALS 
   
+  var initialized = false;
+  
   var scene, camera, renderer;
   var meshes = [];
   var meshControl;
@@ -107,14 +109,17 @@ function Viewer(textureArray, element, options){
       console.log(event);
     }
     
-    textureManager.onLoad = function() {
-      console.log("manager success");
-      setupMeshes();
-      setupCamera();
-      render(); 
+    textureManager.onLoad = function(event){
+      if (initialized == false){
+        setupMeshes();
+        setupCamera();
+        render(); 
       
-      event = $.Event('viewer.loaded');  
-      rendererElement.trigger(event);
+        event = $.Event('viewer.loaded');  
+        rendererElement.trigger(event);
+      
+        initialized = true;
+      }
     }
     
     for (var i =0; i < textureArray.length; i++){

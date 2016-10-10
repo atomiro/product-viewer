@@ -16,10 +16,9 @@
     <script type="text/javascript">
     $(document).ready( function(){
     
-      //var settings = { sceneBackgroundColor: "rgb(96, 97, 91)" }
       var settings = { sceneBackgroundColor: "rgb(0, 0, 0)" }
       var viewerDiv = $('.preview');
-      var viewer = new Viewer(['Butterflies-V1S13b.png', 'FireTights-V1S13b-3.jpg'], viewerDiv, settings);
+      var viewer = new Viewer(['Butterflies-V1S13b.png', 'FireTights-V1S13b.jpg'], viewerDiv, settings);
       
       viewerDiv.on('viewer.loaded', function(){ 
         $(this).addClass("show-viewer"); 
