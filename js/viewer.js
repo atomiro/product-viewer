@@ -163,7 +163,7 @@ function Viewer(textureArray, element, options){
   }
   
   function loadTexture(textureFileName){
-    texturePath = settings.assetPath + textureFileName
+    texturePath = settings.assetPath + textureFileName;
     textureLoader = new THREE.TextureLoader(textureManager);
       
     textureLoader.load(texturePath,
