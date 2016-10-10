@@ -83,7 +83,7 @@
   
   <h2>Requirements</h2>
   <p>
-   The Viewer requires <a href="http://jquery.com/download/#using-jquery-with-a-cdn">jQuery</a> and <a href="https://lodash.com/docs/4.16.4">lodash</a>, please include these in your document before including releases/viewer.js. Only debounce is used from lodash, so feel free to use an exported module of lodash's debounce to save kB. 
+   The Viewer requires <a href="http://jquery.com/download/#using-jquery-with-a-cdn">jQuery</a> and <a href="https://lodash.com/docs/4.16.4">lodash</a> and THREE.js (r81) (THREE.js is included in the repo in js/vendor), please include these in your document before including releases/viewer.js. Only debounce is used from lodash, so feel free to use an exported module of lodash's debounce to save kB. 
   </p>
   <div class=note>
     <h3>Why JQuery?</h3>
@@ -122,6 +122,8 @@
         </script>
         <!-- lodash -->
         <script src="https://cdn.jsdelivr.net/lodash/4.16.4/lodash.min.js"></script>
+        <!-- THREE.js -->
+        <script src="js/vendor/three.js"></script>
         <!-- viewer -->
         <script src="release/viewer.js"></script>
         <!-- initialize viewer -->
