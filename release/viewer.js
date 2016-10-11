@@ -105,10 +105,11 @@ function CameraDollyControl(camera, rendererElement){
   return this;
 
 }
-;//
+;function MeshControl(meshes, rendererElement){
+//
 // Rotate multiple meshes by clicking and dragging side to side
 //
-function MeshControl(meshes, rendererElement){
+
    var mouseDown = false;
    var mouseX = 0;
    var mouseY = 0; 
@@ -348,7 +349,7 @@ function MeshControl(meshes, rendererElement){
   }
   
   function loadTexture(textureFileName){
-    texturePath = settings.assetPath + textureFileName
+    texturePath = settings.assetPath + textureFileName;
     textureLoader = new THREE.TextureLoader(textureManager);
       
     textureLoader.load(texturePath,
