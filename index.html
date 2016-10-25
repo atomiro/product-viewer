@@ -4,6 +4,7 @@
 <head> 
     <meta name="robots" content="noindex" />
     <meta charset="UTF-8"/>
+      <meta content="user-scalable=yes, width=device-width, initial-scale=1.0, maximum-scale=4" name="viewport"/>
     <title>simple threejs design preview</title>
     <link href="highlight/prism.css" rel="stylesheet" type="text/css"/>
     <link href="assets/basic.css" rel="stylesheet" type="text/css"/>
@@ -56,6 +57,13 @@
 	   .show-viewer {
 	     opacity: 1;
 	   }
+	   
+	   @media screen and (max-width: 530px){
+	     .preview { 
+	       height: 100%;
+	       width: 100%;
+	      }
+	   }
     </style>
 </head>
 
@@ -67,8 +75,8 @@
 
   <div class="controls">
    <button class="switch">Switch Model</button>
-   <button class="show-texture" data-texture="Butterflies-V1S13b.png">Butterflies</button>
-   <button class="show-texture" data-texture="FireTights-V1S13b.png">Fire</button>
+   <button class="show-texture" data-texture="Butterflies-V1S13b.jpg">Butterflies</button>
+   <button class="show-texture" data-texture="FireTights-V1S13b.jpg">Fire</button>
    
    <h3>Controls</h3>
    <p>

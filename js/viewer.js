@@ -68,8 +68,8 @@ function Viewer(textureArray, element, options){
   var canvasHeight  = canvasWidth  / settings.aspectRatio;
   var DEVICE_PIXEL_RATIO = window.devicePixelRatio ? window.devicePixelRatio : 1
   
-  var CAM_FAR_PLANE = 1000;
-  var CAM_NEAR_PLANE = 1;
+  var CAM_FAR_PLANE = 100;
+  var CAM_NEAR_PLANE = 0.1;
   
   function loadScene(){
     // load scene json file created with three.js editor

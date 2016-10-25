@@ -2,7 +2,6 @@
 // Zoom with scroll wheel and vertical pan by clicking a dragging up and down
 //
 function CameraDollyControl(camera, rendererElement){
-  //detect camera's coordinate quadrant
   this.minZoomDistance = -20;
   this.maxZoomDistance = -50;
   
@@ -17,7 +16,11 @@ function CameraDollyControl(camera, rendererElement){
   var mouseDown = false;
   var mouseIn = false;
   var mouseX = 0;
+  var initMouseY = 0;
   var mouseY = 0;
+  
+  var lastDistance = 0;
+  var currentDistance = 0;
   
   var obj = this; 
   
@@ -32,15 +35,27 @@ function CameraDollyControl(camera, rendererElement){
     var debounce = _.debounce(onMouseWheel, 10, {leading: true});
     $(window).on('mousewheel', onMouseWheel);
     
+     rendererElement[0].addEventListener('touchmove', 
+     onTouchMove, false);
+     
+     rendererElement[0].addEventListener('touchend', 
+     onTouchEnd, false);
+     
+     rendererElement[0].addEventListener('touchstart', 
+     onTouchStart, false);
+    
   }
   
   function onMouseMove(event){
     if (Math.abs(cameraDist) < obj.panLockAt) {
       var delta = getMouseMoveDelta(event);
-      cameraHeight -= delta[1] * .04;
-      constrainVerticalPan(obj.minCameraHeight, obj.maxCameraHeight);
-      camera.position.y = cameraHeight;
-      camera.lookAt(new THREE.Vector3(0,(cameraHeight),0)); 
+      if (Math.abs(delta[1]) > Math.abs(delta[0])){
+        cameraHeight -= delta[1] * .04;
+        constrainVerticalPan(obj.minCameraHeight, obj.maxCameraHeight);
+        camera.position.y = cameraHeight;
+        camera.lookAt(new THREE.Vector3(0,(cameraHeight),0)); 
+      }
+      console.log(delta[1], delta[0]);
     }
   }
   
@@ -71,6 +86,51 @@ function CameraDollyControl(camera, rendererElement){
     mouseIn = false
   }  
   
+   function onTouchStart(event){
+     if (event.touches.length == 1){
+       initMouseY = event.touches[0].pageY;
+     }
+     if (event.touches.length == 2){
+        var dx = event.touches[ 0 ].pageX - event.touches[ 1 ].pageX;
+		var dy = event.touches[ 0 ].pageY - event.touches[ 1 ].pageY;
+		  
+        currentDist = Math.sqrt( dx * dx + dy * dy );
+        lastDist = currentDist;
+     }
+   }
+   
+   function onTouchMove(event){
+     event.preventDefault();
+     if (event.touches.length == 1){
+        if (Math.abs(cameraDist) < obj.panLockAt) {
+          
+          var delta = getTouchMoveVertical(event);
+          console.log(initMouseY, delta);
+          cameraHeight += (delta * .05);
+          constrainVerticalPan(obj.minCameraHeight, obj.maxCameraHeight);
+          camera.position.y = cameraHeight;
+          camera.lookAt(new THREE.Vector3(0, cameraHeight, 0)); 
+        }
+     }
+     else if (event.touches.length == 2){
+        var dx = event.touches[ 0 ].pageX - event.touches[ 1 ].pageX;
+		var dy = event.touches[ 0 ].pageY - event.touches[ 1 ].pageY;
+		 
+        currentDist = Math.sqrt( dx * dx + dy * dy );
+        var distDelta = currentDist - lastDist;
+        lastDist = currentDist;
+        
+        cameraDist += distDelta;
+        constrainZoom(obj.minZoomDistance, obj.maxZoomDistance);
+        camera.position.x = cameraDist;
+        centerCamera(); 
+     }
+   }
+   
+   function onTouchEnd(event){
+     initMouseY = mouseY;
+   }
+  
   function centerCamera(){
     var totalZoomDist = Math.abs(obj.minZoomDistance - obj.maxZoomDistance);
     var zoomLevel = Math.abs(cameraDist - obj.minZoomDistance) / totalZoomDist;
@@ -87,6 +147,13 @@ function CameraDollyControl(camera, rendererElement){
   function constrainVerticalPan(min, max){
      cameraHeight = ControlUtils.clamp(cameraHeight, min, max);
   }
+  
+  function getTouchMoveVertical(event){
+      mouseY = event.touches[0].pageY;
+      var touchDelta = initMouseY - mouseY;
+      initMouseY = mouseY;
+      return touchDelta;
+   }
   
   function getMouseMoveDelta(event) {
     var deltaX = 0;
