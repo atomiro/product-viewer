@@ -6,16 +6,18 @@ function MeshControl(meshes, rendererElement){
    var mouseY = 0;
    var initMouseX = 0;
    var touchDeltaX = 0;
+   var initMouseY = 0;
+   var touchDeltaY = 0;
+   
    var mouseDown = false;
+   var touchStartTime;
    this.meshes = meshes;
    this.rotationSpeed = 8;
    this.mouseSpeed = this.rotationSpeed/10;
-   this.touchSpeed = this.rotationSpeed/100;
    
    this.setRotationSpeed = function(speed){
      this.rotationSpeed = speed;
      this.mouseSpeed = speed/10;
-     this.touchSpeed = speed/100; 
    }
    
    //INTERNALS 
@@ -57,9 +59,12 @@ function MeshControl(meshes, rendererElement){
    }
    
    function onTouchStart(event){
+     touchStartTime = event.timeStamp;
+     console.log(event);
      if (event.touches.length == 1){
-       touchDeltaX = 0;
+       touchDeltaX, touchDeltaY = 0;
        initMouseX = event.touches[0].pageX;
+       iniMouseY = event.touches[0].pagey;
      }
    }
    
@@ -67,14 +72,16 @@ function MeshControl(meshes, rendererElement){
      event.preventDefault();
      if (event.touches.length == 1){
         getTouchMoveDelta(event);
-        touchDeltaX = ControlUtils.clamp(touchDeltaX, -100, 100);
-        var angle = (touchDeltaX * Math.PI / 180) * obj.touchSpeed;
-        rotateTo(angle);
+        touchDeltaX = ControlUtils.clamp(touchDeltaX, -80, 80);
+        var speed = touchDeltaX / (event.timeStamp - touchStartTime);
+        angle = speed * .4;
+        rotateTo(angle);  
      }
    }
    
    function onTouchEnd(event){
      touchDeltaX = 0;
+     touchDeltaY = 0;
    }
 
    function rotateTo(angle){
@@ -86,7 +93,9 @@ function MeshControl(meshes, rendererElement){
    
    function getTouchMoveDelta(event){
       touchDeltaX = initMouseX - mouseX;
+      touchDeltaY = initMouseY - mouseY;
       mouseX = event.touches[0].pageX;
+      mouseY = event.touches[0].pageY;
    }
    
    function getMouseMoveDelta(event) {

@@ -18,6 +18,7 @@ function CameraDollyControl(camera, rendererElement){
   var mouseX = 0;
   var initMouseY = 0;
   var mouseY = 0;
+  var touchStartTime;
   
   var lastDistance = 0;
   var currentDistance = 0;
@@ -87,6 +88,7 @@ function CameraDollyControl(camera, rendererElement){
   }  
   
    function onTouchStart(event){
+     touchStartTime = event.timeStamp;
      if (event.touches.length == 1){
        initMouseY = event.touches[0].pageY;
      }
@@ -105,8 +107,8 @@ function CameraDollyControl(camera, rendererElement){
         if (Math.abs(cameraDist) < obj.panLockAt) {
           
           var delta = getTouchMoveVertical(event);
-          console.log(initMouseY, delta);
-          cameraHeight += (delta * .05);
+          var speed = delta / (event.timeStamp - touchStartTime);
+          cameraHeight -= speed * 5;
           constrainVerticalPan(obj.minCameraHeight, obj.maxCameraHeight);
           camera.position.y = cameraHeight;
           camera.lookAt(new THREE.Vector3(0, cameraHeight, 0)); 
