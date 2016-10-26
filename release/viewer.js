@@ -56,7 +56,7 @@ function CameraDollyControl(camera, rendererElement){
         camera.position.y = cameraHeight;
         camera.lookAt(new THREE.Vector3(0,(cameraHeight),0)); 
       }
-      console.log(delta[1], delta[0]);
+      //console.log(delta[1], delta[0]);
     }
   }
   
