@@ -245,6 +245,7 @@ function CameraDollyControl(camera, rendererElement){
   var scene, camera, renderer;
   var meshes = [];
   var meshControl;
+  var subdivider = new THREE.SubdivisionModifier(2);
   
   var textures = [];
   var textureManager;
@@ -328,6 +329,12 @@ function CameraDollyControl(camera, rendererElement){
         if (object.type == "Mesh"){
           object.rotation.y = settings.initialRotation * Math.PI / 180;
           meshes.push(object);
+          var smoothGeometry = object.geometry.clone();
+          subdivider.modify(smoothGeometry);
+          object.geometry = smoothGeometry;
+          object.geometry.verticesNeedUpdate = true;
+          object.geometry.uvsNeedUpdate = true;
+          object.geometry.elementsNeedUpdate = true;
           object.material.map = textures[0];
         }
       }
