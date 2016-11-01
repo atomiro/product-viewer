@@ -8,6 +8,7 @@ function MeshControl(meshes, rendererElement){
    var touchDeltaX = 0;
    var initMouseY = 0;
    var touchDeltaY = 0;
+   var lastTimeStamp;
    
    var mouseDown = false;
    var touchStartTime;
@@ -60,22 +61,25 @@ function MeshControl(meshes, rendererElement){
    
    function onTouchStart(event){
      touchStartTime = event.timeStamp;
-     console.log(event);
      if (event.touches.length == 1){
        touchDeltaX, touchDeltaY = 0;
        initMouseX = event.touches[0].pageX;
-       iniMouseY = event.touches[0].pagey;
+       initMouseY = event.touches[0].pageY;
+       //lastMouseX = initMouseX;
      }
    }
    
    function onTouchMove(event){
      event.preventDefault();
      if (event.touches.length == 1){
+        //console.log(initMouseX, mouseX, lastMouseX);
         getTouchMoveDelta(event);
-        touchDeltaX = ControlUtils.clamp(touchDeltaX, -80, 80);
         var speed = touchDeltaX / (event.timeStamp - touchStartTime);
+        touchDeltaX = ControlUtils.clamp(touchDeltaX, -80, 80);
         angle = speed * .4;
-        rotateTo(angle);  
+        rotateTo(angle); 
+        //lastTimeStamp = event.timeStamp; 
+        //lastMouseX = mouseX;
      }
    }
    

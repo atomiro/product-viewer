@@ -56,7 +56,6 @@ function CameraDollyControl(camera, rendererElement){
         camera.position.y = cameraHeight;
         camera.lookAt(new THREE.Vector3(0,(cameraHeight),0)); 
       }
-      //console.log(delta[1], delta[0]);
     }
   }
   
@@ -120,9 +119,11 @@ function CameraDollyControl(camera, rendererElement){
 		 
         currentDist = Math.sqrt( dx * dx + dy * dy );
         var distDelta = currentDist - lastDist;
+        var speed = distDelta/(touchStartTime - event.timeStamp);
         lastDist = currentDist;
-        
+        distDelta = distDelta * .5;
         cameraDist += distDelta;
+        console.log(distDelta, camera.position.x);
         constrainZoom(obj.minZoomDistance, obj.maxZoomDistance);
         camera.position.x = cameraDist;
         centerCamera(); 

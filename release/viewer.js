@@ -56,7 +56,6 @@ function CameraDollyControl(camera, rendererElement){
         camera.position.y = cameraHeight;
         camera.lookAt(new THREE.Vector3(0,(cameraHeight),0)); 
       }
-      //console.log(delta[1], delta[0]);
     }
   }
   
@@ -120,9 +119,11 @@ function CameraDollyControl(camera, rendererElement){
 		 
         currentDist = Math.sqrt( dx * dx + dy * dy );
         var distDelta = currentDist - lastDist;
+        var speed = distDelta/(touchStartTime - event.timeStamp);
         lastDist = currentDist;
-        
+        distDelta = distDelta * .5;
         cameraDist += distDelta;
+        console.log(distDelta, camera.position.x);
         constrainZoom(obj.minZoomDistance, obj.maxZoomDistance);
         camera.position.x = cameraDist;
         centerCamera(); 
@@ -184,6 +185,7 @@ function CameraDollyControl(camera, rendererElement){
    var touchDeltaX = 0;
    var initMouseY = 0;
    var touchDeltaY = 0;
+   var lastTimeStamp;
    
    var mouseDown = false;
    var touchStartTime;
@@ -236,22 +238,25 @@ function CameraDollyControl(camera, rendererElement){
    
    function onTouchStart(event){
      touchStartTime = event.timeStamp;
-     console.log(event);
      if (event.touches.length == 1){
        touchDeltaX, touchDeltaY = 0;
        initMouseX = event.touches[0].pageX;
-       iniMouseY = event.touches[0].pagey;
+       initMouseY = event.touches[0].pageY;
+       //lastMouseX = initMouseX;
      }
    }
    
    function onTouchMove(event){
      event.preventDefault();
      if (event.touches.length == 1){
+        //console.log(initMouseX, mouseX, lastMouseX);
         getTouchMoveDelta(event);
-        touchDeltaX = ControlUtils.clamp(touchDeltaX, -80, 80);
         var speed = touchDeltaX / (event.timeStamp - touchStartTime);
+        touchDeltaX = ControlUtils.clamp(touchDeltaX, -80, 80);
         angle = speed * .4;
-        rotateTo(angle);  
+        rotateTo(angle); 
+        //lastTimeStamp = event.timeStamp; 
+        //lastMouseX = mouseX;
      }
    }
    
@@ -402,6 +407,9 @@ function CameraDollyControl(camera, rendererElement){
     
     scene = sceneFile;
     scene.background = new THREE.Color(settings.sceneBackgroundColor);
+    
+    var grid = new THREE.GridHelper( 200, 50, 0x0000ff, 0x808080 );
+	scene.add(grid);
     
     textureManager = new THREE.LoadingManager();
     

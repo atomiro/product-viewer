@@ -97,6 +97,9 @@ function Viewer(textureArray, element, options){
     scene = sceneFile;
     scene.background = new THREE.Color(settings.sceneBackgroundColor);
     
+    var grid = new THREE.GridHelper( 200, 50, 0x0000ff, 0x808080 );
+	scene.add(grid);
+    
     textureManager = new THREE.LoadingManager();
     
     textureManager.onError = function(event) {

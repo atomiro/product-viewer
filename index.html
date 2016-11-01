@@ -11,7 +11,6 @@
     <script src="https://code.jquery.com/jquery-3.1.0.min.js" integrity="sha256-cCueBR6CsyA4/9szpPfrX3s49M9vUU5BgtiJj06wt/s=" crossorigin="anonymous"></script>
     <script src="https://cdn.jsdelivr.net/lodash/4.16.4/lodash.min.js"></script>
     <script src="assets/vendor/three.js"></script>
-    <script src="assets/vendor/SubdivisionModifier.js"></script>
     <script src="release/viewer.min.js"></script>
     <script type="text/javascript">
     
@@ -21,7 +20,7 @@
         sceneBackgroundColor: "rgb(0, 0, 0)"
       }
       var viewerDiv = $('.preview');
-      var viewer = new Viewer(['Texture_opt.jpg', 'FireTights-V1S13b.png'], viewerDiv, settings);
+      var viewer = new Viewer(['Butterflies-V1S13b.png', 'FireTights-V1S13b.png'], viewerDiv, settings);
       
       viewerDiv.on('viewer.loaded', function(){ 
         $(this).addClass("show-viewer"); 
@@ -48,6 +47,10 @@
         -moz-transition: opacity .3s ease-in-out;
         -o-transition: opacity .3s ease-in-out;
         transition: opacity .3s ease-in-out;
+        
+        -webkit-user-select: none;
+        user-select: none;
+        -webkit-tap-highlight-color: rgba(0,0,0,0);
 	  }
 	  
 	  canvas {
