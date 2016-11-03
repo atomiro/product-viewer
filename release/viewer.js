@@ -123,7 +123,7 @@ function CameraDollyControl(camera, rendererElement){
         lastDist = currentDist;
         distDelta = distDelta * .5;
         cameraDist += distDelta;
-        console.log(distDelta, camera.position.x);
+        //console.log(distDelta, camera.position.x);
         constrainZoom(obj.minZoomDistance, obj.maxZoomDistance);
         camera.position.x = cameraDist;
         centerCamera(); 
@@ -251,9 +251,10 @@ function CameraDollyControl(camera, rendererElement){
      if (event.touches.length == 1){
         //console.log(initMouseX, mouseX, lastMouseX);
         getTouchMoveDelta(event);
-        var speed = touchDeltaX / (event.timeStamp - touchStartTime);
         touchDeltaX = ControlUtils.clamp(touchDeltaX, -80, 80);
+        var speed = touchDeltaX / (event.timeStamp - touchStartTime);
         angle = speed * .4;
+        console.log(speed, angle);
         rotateTo(angle); 
         //lastTimeStamp = event.timeStamp; 
         //lastMouseX = mouseX;

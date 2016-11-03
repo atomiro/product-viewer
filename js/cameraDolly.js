@@ -123,7 +123,7 @@ function CameraDollyControl(camera, rendererElement){
         lastDist = currentDist;
         distDelta = distDelta * .5;
         cameraDist += distDelta;
-        console.log(distDelta, camera.position.x);
+        //console.log(distDelta, camera.position.x);
         constrainZoom(obj.minZoomDistance, obj.maxZoomDistance);
         camera.position.x = cameraDist;
         centerCamera(); 

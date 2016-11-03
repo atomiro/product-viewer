@@ -65,21 +65,17 @@ function MeshControl(meshes, rendererElement){
        touchDeltaX, touchDeltaY = 0;
        initMouseX = event.touches[0].pageX;
        initMouseY = event.touches[0].pageY;
-       //lastMouseX = initMouseX;
      }
    }
    
    function onTouchMove(event){
      event.preventDefault();
      if (event.touches.length == 1){
-        //console.log(initMouseX, mouseX, lastMouseX);
         getTouchMoveDelta(event);
-        var speed = touchDeltaX / (event.timeStamp - touchStartTime);
         touchDeltaX = ControlUtils.clamp(touchDeltaX, -80, 80);
+        var speed = touchDeltaX / (event.timeStamp - touchStartTime);
         angle = speed * .4;
         rotateTo(angle); 
-        //lastTimeStamp = event.timeStamp; 
-        //lastMouseX = mouseX;
      }
    }
    
