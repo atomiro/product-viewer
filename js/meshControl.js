@@ -2,16 +2,6 @@ function MeshControl(meshes, rendererElement){
 //
 // Rotate multiple meshes by clicking and dragging side to side
 //
-   var mouseX = 0;
-   var mouseY = 0;
-   var initMouseX = 0;
-   var touchDeltaX = 0;
-   var initMouseY = 0;
-   var touchDeltaY = 0;
-   var lastTimeStamp;
-   
-   var mouseDown = false;
-   var touchStartTime;
    this.meshes = meshes;
    this.rotationSpeed = 8;
    this.mouseSpeed = this.rotationSpeed/10;
@@ -22,8 +12,21 @@ function MeshControl(meshes, rendererElement){
    }
    
    //INTERNALS 
+   
+   var mouseX = 0;
+   var mouseY = 0;
+   var initMouseX = 0;
+   var touchDeltaX = 0;
+   var initMouseY = 0;
+   var touchDeltaY = 0;
+   var lastTimeStamp;
+   
+   var mouseDown = false;
+   var touchStartTime;
       
    var obj = this;
+   
+   var touchTracker = new TouchTracker(rendererElement);
    
    init();
    
@@ -71,8 +74,7 @@ function MeshControl(meshes, rendererElement){
    function onTouchMove(event){
      event.preventDefault();
      if (event.touches.length == 1){
-        getTouchMoveDelta(event);
-        touchDeltaX = ControlUtils.clamp(touchDeltaX, -80, 80);
+        touchDeltaX = ControlUtils.clamp(touchTracker.getDeltas(event).dx, -80, 80);
         var speed = touchDeltaX / (event.timeStamp - touchStartTime);
         angle = speed * .4;
         rotateTo(angle); 
@@ -80,8 +82,8 @@ function MeshControl(meshes, rendererElement){
    }
    
    function onTouchEnd(event){
-     touchDeltaX = 0;
-     touchDeltaY = 0;
+     //touchDeltaX = 0;
+     //touchDeltaY = 0;
    }
 
    function rotateTo(angle){

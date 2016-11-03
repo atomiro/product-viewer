@@ -123,7 +123,6 @@ function CameraDollyControl(camera, rendererElement){
         lastDist = currentDist;
         distDelta = distDelta * .5;
         cameraDist += distDelta;
-        //console.log(distDelta, camera.position.x);
         constrainZoom(obj.minZoomDistance, obj.maxZoomDistance);
         camera.position.x = cameraDist;
         centerCamera(); 
@@ -179,16 +178,6 @@ function CameraDollyControl(camera, rendererElement){
 //
 // Rotate multiple meshes by clicking and dragging side to side
 //
-   var mouseX = 0;
-   var mouseY = 0;
-   var initMouseX = 0;
-   var touchDeltaX = 0;
-   var initMouseY = 0;
-   var touchDeltaY = 0;
-   var lastTimeStamp;
-   
-   var mouseDown = false;
-   var touchStartTime;
    this.meshes = meshes;
    this.rotationSpeed = 8;
    this.mouseSpeed = this.rotationSpeed/10;
@@ -199,8 +188,21 @@ function CameraDollyControl(camera, rendererElement){
    }
    
    //INTERNALS 
+   
+   var mouseX = 0;
+   var mouseY = 0;
+   var initMouseX = 0;
+   var touchDeltaX = 0;
+   var initMouseY = 0;
+   var touchDeltaY = 0;
+   var lastTimeStamp;
+   
+   var mouseDown = false;
+   var touchStartTime;
       
    var obj = this;
+   
+   var touchTracker = new TouchTracker(rendererElement);
    
    init();
    
@@ -242,28 +244,22 @@ function CameraDollyControl(camera, rendererElement){
        touchDeltaX, touchDeltaY = 0;
        initMouseX = event.touches[0].pageX;
        initMouseY = event.touches[0].pageY;
-       //lastMouseX = initMouseX;
      }
    }
    
    function onTouchMove(event){
      event.preventDefault();
      if (event.touches.length == 1){
-        //console.log(initMouseX, mouseX, lastMouseX);
-        getTouchMoveDelta(event);
-        touchDeltaX = ControlUtils.clamp(touchDeltaX, -80, 80);
+        touchDeltaX = ControlUtils.clamp(touchTracker.getDeltas(event).dx, -80, 80);
         var speed = touchDeltaX / (event.timeStamp - touchStartTime);
         angle = speed * .4;
-        console.log(speed, angle);
         rotateTo(angle); 
-        //lastTimeStamp = event.timeStamp; 
-        //lastMouseX = mouseX;
      }
    }
    
    function onTouchEnd(event){
-     touchDeltaX = 0;
-     touchDeltaY = 0;
+     //touchDeltaX = 0;
+     //touchDeltaY = 0;
    }
 
    function rotateTo(angle){
@@ -297,6 +293,63 @@ function CameraDollyControl(camera, rendererElement){
    
    return this;
 
+};function TouchTracker(element){   
+   
+  var posX = 0;
+  var posY = 0;
+   
+  var startPosX = 0;
+  var startPosY = 0;
+  var startTime;
+  var lastTimeStamp;
+   
+  this.deltaX = 0;
+  this.deltaY = 0;
+   
+  init();
+
+  function init(){
+    var el = element[0];
+    el.addEventListener('touchstart', onTouchStart, false); 
+    el.addEventListener('touchmove', onTouchMove, false);
+    el.addEventListener('touchend', onTouchEnd, false);
+  } 
+    
+  function onTouchStart(event){
+     startTime = event.timeStamp;
+     if (event.touches.length == 1){
+       deltaX, deltaY = 0; 
+       startPosX = event.touches[0].pageX;
+       startPosY = event.touches[0].pageY;
+     }
+   }
+   
+   function onTouchMove(event){
+     event.preventDefault();
+     if (event.touches.length == 1){
+        getTouchMoveDelta(event);
+        var speed = deltaX / (event.timeStamp - startTime);
+     }
+   }
+   
+   function onTouchEnd(event){
+     deltaX, deltaY = 0;
+   }  
+   
+   function getTouchMoveDelta(event){
+      deltaX = startPosX - posX;
+      deltaY = startPosY - posY;
+      posX = event.touches[0].pageX;
+      posY = event.touches[0].pageY;
+   }
+  
+   this.getDeltas = function(event){
+     getTouchMoveDelta(event);
+     
+     return { dx: deltaX,  dy: deltaY }
+   }
+
+   return this;
 };var ControlUtils = {
 
  clamp:  function(value, min, max){
