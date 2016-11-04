@@ -250,10 +250,11 @@ function CameraDollyControl(camera, rendererElement){
    function onTouchMove(event){
      event.preventDefault();
      if (event.touches.length == 1){
-        touchDeltaX = ControlUtils.clamp(touchTracker.getDeltas(event).dx, -80, 80);
+        touchDeltaX = ControlUtils.clamp(touchTracker.deltaX, -80, 80);
         var speed = touchDeltaX / (event.timeStamp - touchStartTime);
         angle = speed * .4;
         rotateTo(angle); 
+        console.log("mesh control", touchTracker.deltaX);
      }
    }
    
@@ -305,10 +306,13 @@ function CameraDollyControl(camera, rendererElement){
    
   this.deltaX = 0;
   this.deltaY = 0;
+  
+  var self = this;
    
   init();
 
   function init(){
+    console.log("tracker init");
     var el = element[0];
     el.addEventListener('touchstart', onTouchStart, false); 
     el.addEventListener('touchmove', onTouchMove, false);
@@ -316,9 +320,10 @@ function CameraDollyControl(camera, rendererElement){
   } 
     
   function onTouchStart(event){
+     console.log("tracker", posX, posY);
      startTime = event.timeStamp;
      if (event.touches.length == 1){
-       deltaX, deltaY = 0; 
+       self.deltaX, self.deltaY = 0; 
        startPosX = event.touches[0].pageX;
        startPosY = event.touches[0].pageY;
      }
@@ -328,17 +333,18 @@ function CameraDollyControl(camera, rendererElement){
      event.preventDefault();
      if (event.touches.length == 1){
         getTouchMoveDelta(event);
-        var speed = deltaX / (event.timeStamp - startTime);
+        var speed = self.deltaX / (event.timeStamp - startTime);
      }
+     console.log("tracker", self.deltaX, self.deltaY);
    }
    
    function onTouchEnd(event){
-     deltaX, deltaY = 0;
+     self.deltaX, self.deltaY = 0;
    }  
    
    function getTouchMoveDelta(event){
-      deltaX = startPosX - posX;
-      deltaY = startPosY - posY;
+      self.deltaX = startPosX - posX;
+      self.deltaY = startPosY - posY;
       posX = event.touches[0].pageX;
       posY = event.touches[0].pageY;
    }

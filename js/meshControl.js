@@ -38,9 +38,6 @@ function MeshControl(meshes, rendererElement){
      rendererElement[0].addEventListener('touchmove', 
      onTouchMove, false);
      
-     rendererElement[0].addEventListener('touchend', 
-     onTouchEnd, false);
-     
      rendererElement[0].addEventListener('touchstart', 
      onTouchStart, false);
    }
@@ -74,30 +71,20 @@ function MeshControl(meshes, rendererElement){
    function onTouchMove(event){
      event.preventDefault();
      if (event.touches.length == 1){
-        touchDeltaX = ControlUtils.clamp(touchTracker.getDeltas(event).dx, -80, 80);
+        touchDeltaX = ControlUtils.clamp(touchTracker.deltaX, -80, 80);
         var speed = touchDeltaX / (event.timeStamp - touchStartTime);
         angle = speed * .4;
         rotateTo(angle); 
+        console.log("mesh control", touchTracker.deltaX);
      }
    }
-   
-   function onTouchEnd(event){
-     //touchDeltaX = 0;
-     //touchDeltaY = 0;
-   }
+
 
    function rotateTo(angle){
      for (var i = 0; i < meshes.length; i++) {
        mesh = meshes[i];
        mesh.rotateOnAxis( new THREE.Vector3(0,1,0), -angle);
      }  
-   }
-   
-   function getTouchMoveDelta(event){
-      touchDeltaX = initMouseX - mouseX;
-      touchDeltaY = initMouseY - mouseY;
-      mouseX = event.touches[0].pageX;
-      mouseY = event.touches[0].pageY;
    }
    
    function getMouseMoveDelta(event) {
