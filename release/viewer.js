@@ -23,7 +23,12 @@ function CameraDollyControl(camera, rendererElement){
   var lastDistance = 0;
   var currentDistance = 0;
   
-  var obj = this; 
+  var touchPanSpeedFactor = .4;
+  var mousePanSpeedFactor = .035;
+  
+  var self = this;
+  
+  var touchTracker = new TouchTracker(rendererElement); 
   
   init();
   
@@ -36,23 +41,15 @@ function CameraDollyControl(camera, rendererElement){
     var debounce = _.debounce(onMouseWheel, 10, {leading: true});
     $(window).on('mousewheel', onMouseWheel);
     
-     rendererElement[0].addEventListener('touchmove', 
-     onTouchMove, false);
-     
-     rendererElement[0].addEventListener('touchend', 
-     onTouchEnd, false);
-     
-     rendererElement[0].addEventListener('touchstart', 
-     onTouchStart, false);
-    
+     rendererElement[0].addEventListener('touchmove', onTouchMove, false); 
   }
   
   function onMouseMove(event){
-    if (Math.abs(cameraDist) < obj.panLockAt) {
+    if (Math.abs(cameraDist) < self.panLockAt) {
       var delta = getMouseMoveDelta(event);
       if (Math.abs(delta[1]) > Math.abs(delta[0])){
-        cameraHeight -= delta[1] * .04;
-        constrainVerticalPan(obj.minCameraHeight, obj.maxCameraHeight);
+        cameraHeight -= delta[1] * mousePanSpeedFactor;
+        constrainVerticalPan(self.minCameraHeight, self.maxCameraHeight);
         camera.position.y = cameraHeight;
         camera.lookAt(new THREE.Vector3(0,(cameraHeight),0)); 
       }
@@ -64,7 +61,7 @@ function CameraDollyControl(camera, rendererElement){
       event.preventDefault();
       var deltaY = ControlUtils.clamp(event.originalEvent.deltaY, -100, 100); 
       cameraDist -= deltaY * .2; 
-      constrainZoom(obj.minZoomDistance, obj.maxZoomDistance);
+      constrainZoom(self.minZoomDistance, self.maxZoomDistance);
       camera.position.x = cameraDist;
       centerCamera(); 
     }  
@@ -85,57 +82,30 @@ function CameraDollyControl(camera, rendererElement){
   function onHoverOut(event){
     mouseIn = false
   }  
-  
-   function onTouchStart(event){
-     touchStartTime = event.timeStamp;
-     if (event.touches.length == 1){
-       initMouseY = event.touches[0].pageY;
-     }
-     if (event.touches.length == 2){
-        var dx = event.touches[ 0 ].pageX - event.touches[ 1 ].pageX;
-		var dy = event.touches[ 0 ].pageY - event.touches[ 1 ].pageY;
-		  
-        currentDist = Math.sqrt( dx * dx + dy * dy );
-        lastDist = currentDist;
-     }
-   }
    
    function onTouchMove(event){
      event.preventDefault();
      if (event.touches.length == 1){
-        if (Math.abs(cameraDist) < obj.panLockAt) {
-          
-          var delta = getTouchMoveVertical(event);
-          var speed = delta / (event.timeStamp - touchStartTime);
-          cameraHeight -= speed * 5;
-          constrainVerticalPan(obj.minCameraHeight, obj.maxCameraHeight);
-          camera.position.y = cameraHeight;
-          camera.lookAt(new THREE.Vector3(0, cameraHeight, 0)); 
+        if (Math.abs(cameraDist) < self.panLockAt) {
+          if (touchTracker.direction == "VERTICAL"){ 
+            cameraHeight -= touchTracker.speedY * touchPanSpeedFactor;
+            constrainVerticalPan(self.minCameraHeight, self.maxCameraHeight);
+            camera.position.y = cameraHeight;
+            camera.lookAt(new THREE.Vector3(0, cameraHeight, 0)); 
+          } 
         }
      }
      else if (event.touches.length == 2){
-        var dx = event.touches[ 0 ].pageX - event.touches[ 1 ].pageX;
-		var dy = event.touches[ 0 ].pageY - event.touches[ 1 ].pageY;
-		 
-        currentDist = Math.sqrt( dx * dx + dy * dy );
-        var distDelta = currentDist - lastDist;
-        var speed = distDelta/(touchStartTime - event.timeStamp);
-        lastDist = currentDist;
-        distDelta = distDelta * .5;
-        cameraDist += distDelta;
-        constrainZoom(obj.minZoomDistance, obj.maxZoomDistance);
+        cameraDist += touchTracker.deltaDistance * .5;
+        constrainZoom(self.minZoomDistance, self.maxZoomDistance);
         camera.position.x = cameraDist;
         centerCamera(); 
      }
    }
-   
-   function onTouchEnd(event){
-     initMouseY = mouseY;
-   }
   
   function centerCamera(){
-    var totalZoomDist = Math.abs(obj.minZoomDistance - obj.maxZoomDistance);
-    var zoomLevel = Math.abs(cameraDist - obj.minZoomDistance) / totalZoomDist;
+    var totalZoomDist = Math.abs(self.minZoomDistance - self.maxZoomDistance);
+    var zoomLevel = Math.abs(cameraDist - self.minZoomDistance) / totalZoomDist;
     cameraHeight = ControlUtils.lerp(cameraHeight, initHeight, zoomLevel);
     camera.position.y = cameraHeight;
     camera.lookAt(new THREE.Vector3(0,(cameraHeight),0));
@@ -149,13 +119,6 @@ function CameraDollyControl(camera, rendererElement){
   function constrainVerticalPan(min, max){
      cameraHeight = ControlUtils.clamp(cameraHeight, min, max);
   }
-  
-  function getTouchMoveVertical(event){
-      mouseY = event.touches[0].pageY;
-      var touchDelta = initMouseY - mouseY;
-      initMouseY = mouseY;
-      return touchDelta;
-   }
   
   function getMouseMoveDelta(event) {
     var deltaX = 0;
@@ -179,28 +142,21 @@ function CameraDollyControl(camera, rendererElement){
 // Rotate multiple meshes by clicking and dragging side to side
 //
    this.meshes = meshes;
-   this.rotationSpeed = 8;
-   this.mouseSpeed = this.rotationSpeed/10;
-   
-   this.setRotationSpeed = function(speed){
-     this.rotationSpeed = speed;
-     this.mouseSpeed = speed/10;
-   }
+   this.mouseSpeedFactor = .8;
+   this.touchSpeedFactor = .35;
    
    //INTERNALS 
    
    var mouseX = 0;
    var mouseY = 0;
    var initMouseX = 0;
-   var touchDeltaX = 0;
    var initMouseY = 0;
-   var touchDeltaY = 0;
-   var lastTimeStamp;
    
    var mouseDown = false;
    var touchStartTime;
+   var lastTimeStamp;
       
-   var obj = this;
+   var self = this;
    
    var touchTracker = new TouchTracker(rendererElement);
    
@@ -211,21 +167,14 @@ function CameraDollyControl(camera, rendererElement){
      rendererElement.mouseup(onMouseUp);
      rendererElement.mousemove(onMouseMove);
      
-     rendererElement[0].addEventListener('touchmove', 
-     onTouchMove, false);
-     
-     rendererElement[0].addEventListener('touchend', 
-     onTouchEnd, false);
-     
-     rendererElement[0].addEventListener('touchstart', 
-     onTouchStart, false);
+     rendererElement[0].addEventListener('touchmove', onTouchMove, false);
    }
    
   function onMouseMove(event) {
      var delta = getMouseMoveDelta(event);
      if (Math.abs(delta[0]) > Math.abs(delta[1])){
        var deltaX = ControlUtils.clamp(delta[0], -30, 30);
-       var angle = (deltaX * Math.PI / 180) * obj.mouseSpeed;
+       var angle = (deltaX * Math.PI / 180) * self.mouseSpeedFactor;
        rotateTo(angle);
      }
    }
@@ -238,29 +187,14 @@ function CameraDollyControl(camera, rendererElement){
      mouseDown = false;
    }
    
-   function onTouchStart(event){
-     touchStartTime = event.timeStamp;
-     if (event.touches.length == 1){
-       touchDeltaX, touchDeltaY = 0;
-       initMouseX = event.touches[0].pageX;
-       initMouseY = event.touches[0].pageY;
-     }
-   }
-   
    function onTouchMove(event){
      event.preventDefault();
      if (event.touches.length == 1){
-        touchDeltaX = ControlUtils.clamp(touchTracker.deltaX, -80, 80);
-        var speed = touchDeltaX / (event.timeStamp - touchStartTime);
-        angle = speed * .4;
-        rotateTo(angle); 
-        console.log("mesh control", touchTracker.deltaX);
+       if (touchTracker.direction == "HORIZONTAL"){
+          angle = touchTracker.speedX * self.touchSpeedFactor;
+          rotateTo(angle); 
+        }
      }
-   }
-   
-   function onTouchEnd(event){
-     //touchDeltaX = 0;
-     //touchDeltaY = 0;
    }
 
    function rotateTo(angle){
@@ -268,13 +202,6 @@ function CameraDollyControl(camera, rendererElement){
        mesh = meshes[i];
        mesh.rotateOnAxis( new THREE.Vector3(0,1,0), -angle);
      }  
-   }
-   
-   function getTouchMoveDelta(event){
-      touchDeltaX = initMouseX - mouseX;
-      touchDeltaY = initMouseY - mouseY;
-      mouseX = event.touches[0].pageX;
-      mouseY = event.touches[0].pageY;
    }
    
    function getMouseMoveDelta(event) {
@@ -306,13 +233,20 @@ function CameraDollyControl(camera, rendererElement){
    
   this.deltaX = 0;
   this.deltaY = 0;
+  this.speedX = 0;
+  this.speedY = 0;
+  this.direction = "HORIZONTAL";
+  
+  var lastDistance = 0;
+  var currentDistance = 0;
+  
+  this.deltaDistance = 0;
   
   var self = this;
    
   init();
 
   function init(){
-    console.log("tracker init");
     var el = element[0];
     el.addEventListener('touchstart', onTouchStart, false); 
     el.addEventListener('touchmove', onTouchMove, false);
@@ -326,6 +260,9 @@ function CameraDollyControl(camera, rendererElement){
        self.deltaX, self.deltaY = 0; 
        startPosX = event.touches[0].pageX;
        startPosY = event.touches[0].pageY;
+     } else if (event.touches.length == 2){
+       currentDistance = touchDistance(event);
+       lastDistance = currentDistance;
      }
    }
    
@@ -333,13 +270,19 @@ function CameraDollyControl(camera, rendererElement){
      event.preventDefault();
      if (event.touches.length == 1){
         getTouchMoveDelta(event);
-        var speed = self.deltaX / (event.timeStamp - startTime);
+        detectDirection();
+        self.speedX = self.deltaX / (event.timeStamp - startTime);
+        self.speedY = self.deltaY / (event.timeStamp - startTime);
+     } else if (event.touches.length == 2) {
+        currentDistance = touchDistance(event);
+        self.deltaDistance = currentDistance - lastDistance;
+        lastDistance = currentDistance;
      }
-     console.log("tracker", self.deltaX, self.deltaY);
    }
    
    function onTouchEnd(event){
      self.deltaX, self.deltaY = 0;
+     self.deltaDistance = 0;
    }  
    
    function getTouchMoveDelta(event){
@@ -347,6 +290,22 @@ function CameraDollyControl(camera, rendererElement){
       self.deltaY = startPosY - posY;
       posX = event.touches[0].pageX;
       posY = event.touches[0].pageY;
+   }
+   
+   function touchDistance(event){
+      var dx = event.touches[ 0 ].pageX - event.touches[ 1 ].pageX;
+	  var dy = event.touches[ 0 ].pageY - event.touches[ 1 ].pageY; 
+	  
+	  var distance = Math.sqrt( dx * dx + dy * dy );
+	  return distance;
+   }
+   
+   function detectDirection(){
+     if (Math.abs(self.deltaY) > Math.abs(self.deltaX)){
+       self.direction = "VERTICAL";
+     } else {
+       self.direction = "HORIZONTAL";
+     }
    }
   
    this.getDeltas = function(event){

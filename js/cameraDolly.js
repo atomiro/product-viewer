@@ -23,7 +23,12 @@ function CameraDollyControl(camera, rendererElement){
   var lastDistance = 0;
   var currentDistance = 0;
   
-  var obj = this; 
+  var touchPanSpeedFactor = .4;
+  var mousePanSpeedFactor = .035;
+  
+  var self = this;
+  
+  var touchTracker = new TouchTracker(rendererElement); 
   
   init();
   
@@ -36,23 +41,15 @@ function CameraDollyControl(camera, rendererElement){
     var debounce = _.debounce(onMouseWheel, 10, {leading: true});
     $(window).on('mousewheel', onMouseWheel);
     
-     rendererElement[0].addEventListener('touchmove', 
-     onTouchMove, false);
-     
-     rendererElement[0].addEventListener('touchend', 
-     onTouchEnd, false);
-     
-     rendererElement[0].addEventListener('touchstart', 
-     onTouchStart, false);
-    
+     rendererElement[0].addEventListener('touchmove', onTouchMove, false); 
   }
   
   function onMouseMove(event){
-    if (Math.abs(cameraDist) < obj.panLockAt) {
+    if (Math.abs(cameraDist) < self.panLockAt) {
       var delta = getMouseMoveDelta(event);
       if (Math.abs(delta[1]) > Math.abs(delta[0])){
-        cameraHeight -= delta[1] * .04;
-        constrainVerticalPan(obj.minCameraHeight, obj.maxCameraHeight);
+        cameraHeight -= delta[1] * mousePanSpeedFactor;
+        constrainVerticalPan(self.minCameraHeight, self.maxCameraHeight);
         camera.position.y = cameraHeight;
         camera.lookAt(new THREE.Vector3(0,(cameraHeight),0)); 
       }
@@ -64,7 +61,7 @@ function CameraDollyControl(camera, rendererElement){
       event.preventDefault();
       var deltaY = ControlUtils.clamp(event.originalEvent.deltaY, -100, 100); 
       cameraDist -= deltaY * .2; 
-      constrainZoom(obj.minZoomDistance, obj.maxZoomDistance);
+      constrainZoom(self.minZoomDistance, self.maxZoomDistance);
       camera.position.x = cameraDist;
       centerCamera(); 
     }  
@@ -85,57 +82,30 @@ function CameraDollyControl(camera, rendererElement){
   function onHoverOut(event){
     mouseIn = false
   }  
-  
-   function onTouchStart(event){
-     touchStartTime = event.timeStamp;
-     if (event.touches.length == 1){
-       initMouseY = event.touches[0].pageY;
-     }
-     if (event.touches.length == 2){
-        var dx = event.touches[ 0 ].pageX - event.touches[ 1 ].pageX;
-		var dy = event.touches[ 0 ].pageY - event.touches[ 1 ].pageY;
-		  
-        currentDist = Math.sqrt( dx * dx + dy * dy );
-        lastDist = currentDist;
-     }
-   }
    
    function onTouchMove(event){
      event.preventDefault();
      if (event.touches.length == 1){
-        if (Math.abs(cameraDist) < obj.panLockAt) {
-          
-          var delta = getTouchMoveVertical(event);
-          var speed = delta / (event.timeStamp - touchStartTime);
-          cameraHeight -= speed * 5;
-          constrainVerticalPan(obj.minCameraHeight, obj.maxCameraHeight);
-          camera.position.y = cameraHeight;
-          camera.lookAt(new THREE.Vector3(0, cameraHeight, 0)); 
+        if (Math.abs(cameraDist) < self.panLockAt) {
+          if (touchTracker.direction == "VERTICAL"){ 
+            cameraHeight -= touchTracker.speedY * touchPanSpeedFactor;
+            constrainVerticalPan(self.minCameraHeight, self.maxCameraHeight);
+            camera.position.y = cameraHeight;
+            camera.lookAt(new THREE.Vector3(0, cameraHeight, 0)); 
+          } 
         }
      }
      else if (event.touches.length == 2){
-        var dx = event.touches[ 0 ].pageX - event.touches[ 1 ].pageX;
-		var dy = event.touches[ 0 ].pageY - event.touches[ 1 ].pageY;
-		 
-        currentDist = Math.sqrt( dx * dx + dy * dy );
-        var distDelta = currentDist - lastDist;
-        var speed = distDelta/(touchStartTime - event.timeStamp);
-        lastDist = currentDist;
-        distDelta = distDelta * .5;
-        cameraDist += distDelta;
-        constrainZoom(obj.minZoomDistance, obj.maxZoomDistance);
+        cameraDist += touchTracker.deltaDistance * .5;
+        constrainZoom(self.minZoomDistance, self.maxZoomDistance);
         camera.position.x = cameraDist;
         centerCamera(); 
      }
    }
-   
-   function onTouchEnd(event){
-     initMouseY = mouseY;
-   }
   
   function centerCamera(){
-    var totalZoomDist = Math.abs(obj.minZoomDistance - obj.maxZoomDistance);
-    var zoomLevel = Math.abs(cameraDist - obj.minZoomDistance) / totalZoomDist;
+    var totalZoomDist = Math.abs(self.minZoomDistance - self.maxZoomDistance);
+    var zoomLevel = Math.abs(cameraDist - self.minZoomDistance) / totalZoomDist;
     cameraHeight = ControlUtils.lerp(cameraHeight, initHeight, zoomLevel);
     camera.position.y = cameraHeight;
     camera.lookAt(new THREE.Vector3(0,(cameraHeight),0));
@@ -149,13 +119,6 @@ function CameraDollyControl(camera, rendererElement){
   function constrainVerticalPan(min, max){
      cameraHeight = ControlUtils.clamp(cameraHeight, min, max);
   }
-  
-  function getTouchMoveVertical(event){
-      mouseY = event.touches[0].pageY;
-      var touchDelta = initMouseY - mouseY;
-      initMouseY = mouseY;
-      return touchDelta;
-   }
   
   function getMouseMoveDelta(event) {
     var deltaX = 0;

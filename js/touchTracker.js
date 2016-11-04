@@ -10,13 +10,20 @@ function TouchTracker(element){
    
   this.deltaX = 0;
   this.deltaY = 0;
+  this.speedX = 0;
+  this.speedY = 0;
+  this.direction = "HORIZONTAL";
+  
+  var lastDistance = 0;
+  var currentDistance = 0;
+  
+  this.deltaDistance = 0;
   
   var self = this;
    
   init();
 
   function init(){
-    console.log("tracker init");
     var el = element[0];
     el.addEventListener('touchstart', onTouchStart, false); 
     el.addEventListener('touchmove', onTouchMove, false);
@@ -30,6 +37,9 @@ function TouchTracker(element){
        self.deltaX, self.deltaY = 0; 
        startPosX = event.touches[0].pageX;
        startPosY = event.touches[0].pageY;
+     } else if (event.touches.length == 2){
+       currentDistance = touchDistance(event);
+       lastDistance = currentDistance;
      }
    }
    
@@ -37,13 +47,19 @@ function TouchTracker(element){
      event.preventDefault();
      if (event.touches.length == 1){
         getTouchMoveDelta(event);
-        var speed = self.deltaX / (event.timeStamp - startTime);
+        detectDirection();
+        self.speedX = self.deltaX / (event.timeStamp - startTime);
+        self.speedY = self.deltaY / (event.timeStamp - startTime);
+     } else if (event.touches.length == 2) {
+        currentDistance = touchDistance(event);
+        self.deltaDistance = currentDistance - lastDistance;
+        lastDistance = currentDistance;
      }
-     console.log("tracker", self.deltaX, self.deltaY);
    }
    
    function onTouchEnd(event){
      self.deltaX, self.deltaY = 0;
+     self.deltaDistance = 0;
    }  
    
    function getTouchMoveDelta(event){
@@ -51,6 +67,22 @@ function TouchTracker(element){
       self.deltaY = startPosY - posY;
       posX = event.touches[0].pageX;
       posY = event.touches[0].pageY;
+   }
+   
+   function touchDistance(event){
+      var dx = event.touches[ 0 ].pageX - event.touches[ 1 ].pageX;
+	  var dy = event.touches[ 0 ].pageY - event.touches[ 1 ].pageY; 
+	  
+	  var distance = Math.sqrt( dx * dx + dy * dy );
+	  return distance;
+   }
+   
+   function detectDirection(){
+     if (Math.abs(self.deltaY) > Math.abs(self.deltaX)){
+       self.direction = "VERTICAL";
+     } else {
+       self.direction = "HORIZONTAL";
+     }
    }
   
    this.getDeltas = function(event){
