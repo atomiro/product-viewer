@@ -35,8 +35,8 @@ function TouchTracker(element){
      startTime = event.timeStamp;
      if (event.touches.length == 1){
        self.deltaX, self.deltaY = 0; 
-       startPosX = event.touches[0].pageX;
-       startPosY = event.touches[0].pageY;
+       startPosX, posX = event.touches[0].pageX;
+       startPosY, posY = event.touches[0].pageY;
      } else if (event.touches.length == 2){
        currentDistance = touchDistance(event);
        lastDistance = currentDistance;
@@ -46,7 +46,9 @@ function TouchTracker(element){
    function onTouchMove(event){
      event.preventDefault();
      if (event.touches.length == 1){
+        console.log("last", posX);
         getTouchMoveDelta(event);
+        console.log("current", posX, self.deltaX);
         detectDirection();
         self.speedX = self.deltaX / (event.timeStamp - startTime);
         self.speedY = self.deltaY / (event.timeStamp - startTime);
