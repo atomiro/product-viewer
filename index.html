@@ -17,10 +17,11 @@
     $(document).ready( function(){
     
       var settings = { 
-        sceneBackgroundColor: "rgb(0, 0, 0)"
+        sceneBackgroundColor: "rgb(0, 0, 0)",
+        sceneFile: "scene_lights_adjusted.json"
       }
       var viewerDiv = $('.preview');
-      var viewer = new Viewer(['Butterflies-V1S13b.png', 'FireTights-V1S13b.png'], viewerDiv, settings);
+      var viewer = new Viewer(['Azalea-V1S13-01.jpg', 'Bismuth-V1S12-Grey-01.jpg'], viewerDiv, settings);
       
       viewerDiv.on('viewer.loaded', function(){ 
         $(this).addClass("show-viewer"); 
@@ -79,8 +80,8 @@
 
   <div class="controls">
    <button class="switch">Switch Model</button>
-   <button class="show-texture" data-texture="Texture_opt.jpg">Opt</button>
-   <button class="show-texture" data-texture="FireTights-V1S13b.png">Fire</button>
+   <button class="show-texture" data-texture="Azalea-V1S13-01.jpg">Azalea</button>
+   <button class="show-texture" data-texture="Bismuth-V1S12-Grey-01.jpg">Bismuth</button>
    
    <h3>Controls</h3>
    <p>
