@@ -5,7 +5,7 @@ function Viewer(textureArray, element, options){
     sceneFile: "models_scene.json",
     fov: 23,
     aspectRatio: 4/5,
-    cameraXPosition: -50,
+    cameraXPosition: -35,
     cameraYPosition: 8.5,
     initialRotation: -90,
     sceneBackgroundColor: "rgb(100, 100, 100)"
@@ -18,6 +18,12 @@ function Viewer(textureArray, element, options){
     $(window).resize(function(){ 
       debounceResize(element);
     });
+    
+    element.mousedown(onMouseDown);
+    element.mouseup(onMouseUp);
+    
+    element.css("cursor", "-webkit-grab");
+    element.css("cursor", "grab");
   }
   
   this.toggleModels = function() {
@@ -68,7 +74,7 @@ function Viewer(textureArray, element, options){
   var canvasHeight  = canvasWidth  / settings.aspectRatio;
   var DEVICE_PIXEL_RATIO = window.devicePixelRatio ? window.devicePixelRatio : 1
   
-  var CAM_FAR_PLANE = 100;
+  var CAM_FAR_PLANE = 1000;
   var CAM_NEAR_PLANE = 0.1;
   
   function loadScene(){
@@ -90,7 +96,7 @@ function Viewer(textureArray, element, options){
   function setup(sceneFile){
     renderer = new THREE.WebGLRenderer({ antialias: true });
     renderer.setPixelRatio(DEVICE_PIXEL_RATIO); 
-    renderer.setSize(canvasWidth , canvasHeight );
+    renderer.setSize(canvasWidth, canvasHeight);
     
     rendererElement.append(renderer.domElement);
     
@@ -132,11 +138,17 @@ function Viewer(textureArray, element, options){
   }
   
   function setupCamera(){
-    camera = new THREE.PerspectiveCamera(settings.fov, settings.aspectRatio, CAM_NEAR_PLANE, CAM_FAR_PLANE);      
+    camera = new THREE.PerspectiveCamera(settings.fov, settings.aspectRatio, CAM_NEAR_PLANE, CAM_FAR_PLANE);
     camera.position.x = settings.cameraXPosition;
-    camera.position.y = settings.cameraYPosition;
-    camera.lookAt(new THREE.Vector3(0, settings.cameraYPosition, 0));
-    cameraControl = new CameraDollyControl(camera, rendererElement);
+    var center = meshes[1].geometry.boundingBox.center().y * .12;
+    camera.position.y = center;
+    console.log(center, camera.position);
+    camera.lookAt(new THREE.Vector3(0, center, 0));
+    var cameraSettings = {
+      maxZoomDistance: settings.cameraXPosition,
+      maxCameraHeight: meshes[1].geometry.boundingBox.size().y * .1 
+    }
+    cameraControl = new CameraDollyControl(camera, rendererElement, cameraSettings);
   }
   
   function setupMeshes(){
@@ -146,11 +158,20 @@ function Viewer(textureArray, element, options){
           object.rotation.y = settings.initialRotation * Math.PI / 180;
           meshes.push(object);
           object.material.map = textures[0];
+          object.geometry.computeBoundingBox();
         }
       }
       
     meshes[1].visible = false;
     meshes[0].visible = true;
+    console.log(meshes[0].geometry);
+    var bbox1 = new THREE.BoundingBoxHelper(meshes[0], 0x00ff00);
+    console.log(meshes[0].geometry.boundingBox.max.y, meshes[0].geometry.boundingBox.min.y);
+    var bbox2 = new THREE.BoundingBoxHelper(meshes[1], 0xff0000);
+    bbox1.update();
+    bbox2.update();
+    scene.add(bbox1);
+    scene.add(bbox2);
       
     meshControl = new MeshControl(meshes, rendererElement);
   }
@@ -210,6 +231,17 @@ function Viewer(textureArray, element, options){
     requestAnimationFrame(render);
     renderer.render(scene, camera);
   }
+  
+  function onMouseDown(event) {
+     element.css("cursor", "-webkit-grabbing");
+     element.css("cursor", "grabbing");
+   }
+   
+   function onMouseUp(event) {
+     mouseDown = false;
+     element.css("cursor", "-webkit-grab");
+     element.css("cursor", "grab");
+   }
   
   return this;
 
