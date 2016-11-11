@@ -1,7 +1,7 @@
 //
 // Zoom with scroll wheel and vertical pan by clicking a dragging up and down
 //
-function CameraDollyControl(camera, rendererElement, options){
+function CameraDollyControl(camera, scene, rendererElement, options){
   var settings = {
     minZoomDistance: -12,
     maxZoomDistance: -50,
@@ -21,6 +21,9 @@ function CameraDollyControl(camera, rendererElement, options){
   var mouseY = 0;
   var touchStartTime;
   
+  var mouse = new THREE.Vector2();
+  var raycaster;
+  
   var lastDistance = 0;
   var currentDistance = 0;
   
@@ -30,6 +33,9 @@ function CameraDollyControl(camera, rendererElement, options){
   var self = this;
   
   var touchTracker = new TouchTracker(rendererElement); 
+  
+  var isAnimating = false;
+  var progress = 0; 
   
   init();
   
@@ -41,11 +47,14 @@ function CameraDollyControl(camera, rendererElement, options){
     rendererElement.mousedown(onMouseDown);
     rendererElement.mouseup(onMouseUp);
     rendererElement.hover(onHoverIn, onHoverOut);
+    rendererElement.dblclick(onDblClick);
     
     var debounce = _.debounce(onMouseWheel, 10, {leading: true});
     $(window).on('mousewheel', onMouseWheel);
     
      rendererElement[0].addEventListener('touchmove', onTouchMove, false); 
+     
+     raycaster = new THREE.Raycaster();
   }
   
   function onMouseMove(event){
@@ -63,6 +72,7 @@ function CameraDollyControl(camera, rendererElement, options){
   
   function onMouseWheel(event){
     if (mouseIn){
+      isAnimating = false;
       event.preventDefault();
       var deltaY = ControlUtils.clamp(event.originalEvent.deltaY, -100, 100); 
       cameraDist -= deltaY * .2; 
@@ -88,6 +98,20 @@ function CameraDollyControl(camera, rendererElement, options){
   function onHoverOut(event){
     mouseIn = false
   }  
+  
+  function onDblClick(event){
+    mouse.x = (event.offsetX) / rendererElement.width() * 2 - 1
+    mouse.y = -(event.offsetY) / rendererElement.height() * 2 + 1
+    raycaster.setFromCamera( mouse, camera );
+    var intersects = raycaster.intersectObjects( scene.children );
+    console.log("dblclick", intersects);
+    if (intersects.length > 0){
+      // auto zoom in 
+    } else {
+      
+    }
+    isAnimating = true;
+  }
    
    function onTouchMove(event){
      event.preventDefault();
@@ -116,6 +140,24 @@ function CameraDollyControl(camera, rendererElement, options){
     camera.position.y = cameraHeight;
     camera.lookAt(new THREE.Vector3(0,(cameraHeight),0));
   }
+  
+  function centerCameraOverTime(step){
+    if (isAnimating){
+      progress += step;
+      progress = ControlUtils.clamp(progress, 0, 1); 
+      cameraHeight = ControlUtils.lerp(cameraHeight, initHeight, progress);
+      cameraDist = ControlUtils.lerp(cameraDist, settings.maxZoomDistance, progress);
+      camera.position.y = cameraHeight;
+      camera.position.x = cameraDist;
+      camera.lookAt(new THREE.Vector3(0,(cameraHeight),0));
+      console.log(progress);
+    }
+    if (progress == 1){
+      console.log("STOP");
+      isAnimating = false;
+      progress = 0;
+    }  
+  }
 
   function constrainZoom(min, max){
     if (Math.abs(cameraDist) < Math.abs(min)) { cameraDist = min }
@@ -139,6 +181,10 @@ function CameraDollyControl(camera, rendererElement, options){
     mouseY = event.pageY;  
     return [deltaX, deltaY];
   } 
+  
+  this.animate = function(step){
+    centerCameraOverTime(step);
+  }
   
   return this;
 
@@ -403,6 +449,7 @@ function CameraDollyControl(camera, rendererElement, options){
   var scene, camera, renderer;
   var meshes = [];
   var meshControl;
+  var cameraControl;
   
   var textures = [];
   var textureManager;
@@ -486,7 +533,7 @@ function CameraDollyControl(camera, rendererElement, options){
       maxZoomDistance: settings.cameraXPosition,
       maxCameraHeight: meshes[1].geometry.boundingBox.size().y * .1 
     }
-    cameraControl = new CameraDollyControl(camera, rendererElement, cameraSettings);
+    cameraControl = new CameraDollyControl(camera, scene, rendererElement, cameraSettings);
   }
   
   function setupMeshes(){
@@ -508,8 +555,8 @@ function CameraDollyControl(camera, rendererElement, options){
     var bbox2 = new THREE.BoundingBoxHelper(meshes[1], 0xff0000);
     bbox1.update();
     bbox2.update();
-    scene.add(bbox1);
-    scene.add(bbox2);
+    //scene.add(bbox1);
+    //scene.add(bbox2);
       
     meshControl = new MeshControl(meshes, rendererElement);
   }
@@ -567,6 +614,8 @@ function CameraDollyControl(camera, rendererElement, options){
   
   function render(){
     requestAnimationFrame(render);
+    
+    cameraControl.animate(.02);
     renderer.render(scene, camera);
   }
   

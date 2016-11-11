@@ -65,6 +65,7 @@ function Viewer(textureArray, element, options){
   var scene, camera, renderer;
   var meshes = [];
   var meshControl;
+  var cameraControl;
   
   var textures = [];
   var textureManager;
@@ -148,7 +149,7 @@ function Viewer(textureArray, element, options){
       maxZoomDistance: settings.cameraXPosition,
       maxCameraHeight: meshes[1].geometry.boundingBox.size().y * .1 
     }
-    cameraControl = new CameraDollyControl(camera, rendererElement, cameraSettings);
+    cameraControl = new CameraDollyControl(camera, scene, rendererElement, cameraSettings);
   }
   
   function setupMeshes(){
@@ -170,8 +171,8 @@ function Viewer(textureArray, element, options){
     var bbox2 = new THREE.BoundingBoxHelper(meshes[1], 0xff0000);
     bbox1.update();
     bbox2.update();
-    scene.add(bbox1);
-    scene.add(bbox2);
+    //scene.add(bbox1);
+    //scene.add(bbox2);
       
     meshControl = new MeshControl(meshes, rendererElement);
   }
@@ -229,6 +230,8 @@ function Viewer(textureArray, element, options){
   
   function render(){
     requestAnimationFrame(render);
+    
+    cameraControl.animate(.02);
     renderer.render(scene, camera);
   }
   
