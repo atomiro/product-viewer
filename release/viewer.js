@@ -1,7 +1,7 @@
 //
 // Zoom with scroll wheel and vertical pan by clicking a dragging up and down
 //
-function CameraDollyControl(camera, scene, rendererElement, options){
+function CameraDollyControl(camera, meshes, rendererElement, options){
   var settings = {
     minZoomDistance: -12,
     maxZoomDistance: -50,
@@ -14,15 +14,14 @@ function CameraDollyControl(camera, scene, rendererElement, options){
   var initHeight = camera.position.y;
   var cameraHeight = camera.position.y;
   var cameraDist = camera.position.x;
+  
+  var mouse = {x: 0, y: 0};
   var mouseDown = false;
   var mouseIn = false;
-  var mouseX = 0;
   var initMouseY = 0;
-  var mouseY = 0;
-  var touchStartTime;
   
-  var mouse = new THREE.Vector2();
-  var raycaster;
+  var touchStartTime;
+  var lastTouchTime;
   
   var lastDistance = 0;
   var currentDistance = 0;
@@ -35,6 +34,7 @@ function CameraDollyControl(camera, scene, rendererElement, options){
   var touchTracker = new TouchTracker(rendererElement); 
   
   var isAnimating = false;
+  var zoomingOut = false;
   var progress = 0; 
   
   init();
@@ -43,29 +43,59 @@ function CameraDollyControl(camera, scene, rendererElement, options){
     $.extend(settings, options);
     self.panLockAt = Math.abs(settings.maxZoomDistance) - 3;
     
+    rendererElement.dblclick(onDblClick);
+    
     rendererElement.mousemove(onMouseMove);
     rendererElement.mousedown(onMouseDown);
     rendererElement.mouseup(onMouseUp);
     rendererElement.hover(onHoverIn, onHoverOut);
-    rendererElement.dblclick(onDblClick);
     
     var debounce = _.debounce(onMouseWheel, 10, {leading: true});
     $(window).on('mousewheel', onMouseWheel);
     
-     rendererElement[0].addEventListener('touchmove', onTouchMove, false); 
-     
-     raycaster = new THREE.Raycaster();
+    rendererElement[0].addEventListener('touchmove', onTouchMove, false);
+    rendererElement[0].addEventListener('touchend', onTouchEnd, false);
   }
+  
+  function onDblClick(event){
+    autoZoom();
+  }
+  
+  function onTouchEnd(event){
+     var delay = 300;
+     var delta = lastTouchTime ? event.timeStamp - lastTouchTime : 0;
+     if (delta < delay && delta > 30){
+       console.log('dolly doubletap');
+       event.preventDefault();
+       autoZoom();
+       console.log(event.touches);
+     }
+     lastTouchTime = event.timeStamp;
+  }
+  
+  function autoZoom(){
+    isAnimating = true;
+    var zoomThreshold = Math.abs(settings.maxZoomDistance - settings.minZoomDistance / 2);
+    if (Math.abs(camera.position.x) > zoomThreshold) {
+      zoomingOut = false;
+    } else {
+      zoomingOut = true;
+    }
+  }
+  
+  function onMouseDown(event){ mouseDown = true; }
+  
+  function onMouseUp(event){ mouseDown = false;}
+  
+  function onHoverIn(event){  mouseIn = true; }
+  
+  function onHoverOut(event){ mouseIn = false; } 
   
   function onMouseMove(event){
     if (Math.abs(cameraDist) < self.panLockAt) {
       var delta = getMouseMoveDelta(event);
       if (Math.abs(delta[1]) > Math.abs(delta[0])){
-        cameraHeight -= delta[1] * mousePanSpeedFactor;
-        constrainVerticalPan(settings.minCameraHeight, settings.maxCameraHeight);
-        camera.position.y = cameraHeight;
-        camera.lookAt(new THREE.Vector3(0,(cameraHeight),0)); 
-        console.log(camera.position);
+        pan(delta[1], mousePanSpeedFactor);
       }
     }
   }
@@ -75,85 +105,65 @@ function CameraDollyControl(camera, scene, rendererElement, options){
       isAnimating = false;
       event.preventDefault();
       var deltaY = ControlUtils.clamp(event.originalEvent.deltaY, -100, 100); 
-      cameraDist -= deltaY * .2; 
-      constrainZoom(settings.minZoomDistance, settings.maxZoomDistance);
-      camera.position.x = cameraDist;
-      centerCamera();
-      console.log(camera.position); 
+      interactiveZoom(deltaY, .2);
     }  
-  }
-  
-  function onMouseDown(event){
-     mouseDown = true;
-  }
-  
-  function onMouseUp(event){
-     mouseDown = false;
-  }
-  
-  function onHoverIn(event){
-    mouseIn = true;
-  }
-  
-  function onHoverOut(event){
-    mouseIn = false
-  }  
-  
-  function onDblClick(event){
-    mouse.x = (event.offsetX) / rendererElement.width() * 2 - 1
-    mouse.y = -(event.offsetY) / rendererElement.height() * 2 + 1
-    raycaster.setFromCamera( mouse, camera );
-    var intersects = raycaster.intersectObjects( scene.children );
-    console.log("dblclick", intersects);
-    if (intersects.length > 0){
-      // auto zoom in 
-    } else {
-      
-    }
-    isAnimating = true;
-  }
+  } 
    
    function onTouchMove(event){
      event.preventDefault();
      if (event.touches.length == 1){
         if (Math.abs(cameraDist) < self.panLockAt) {
           if (touchTracker.direction == "VERTICAL"){ 
-            cameraHeight -= touchTracker.speedY * touchPanSpeedFactor;
-            constrainVerticalPan(settings.minCameraHeight, settings.maxCameraHeight);
-            camera.position.y = cameraHeight;
-            camera.lookAt(new THREE.Vector3(0, cameraHeight, 0)); 
+            pan(touchTracker.speedY, touchPanSpeedFactor);
           } 
         }
      }
      else if (event.touches.length == 2){
-        cameraDist += touchTracker.deltaDistance * .5;
-        constrainZoom(settings.minZoomDistance, settings.maxZoomDistance);
-        camera.position.x = cameraDist;
-        centerCamera(); 
+        interactiveZoom(touchTracker.deltaDistance, .5);
      }
    }
+  
+  function interactiveZoom(speed, factor){
+    cameraDist += speed * factor;
+    constrainZoom(settings.minZoomDistance, settings.maxZoomDistance);
+    camera.position.x = cameraDist;
+    centerCamera(); 
+  }
+  
+  function pan(speed, factor){
+    cameraHeight -= speed * factor;
+    constrainVerticalPan(settings.minCameraHeight, settings.maxCameraHeight);
+    camera.position.y = cameraHeight;
+    camera.lookAt(new THREE.Vector3(0,(cameraHeight),0)); 
+  }
   
   function centerCamera(){
     var totalZoomDist = Math.abs(settings.minZoomDistance - settings.maxZoomDistance);
     var zoomLevel = Math.abs(cameraDist - settings.minZoomDistance) / totalZoomDist;
+    
     cameraHeight = ControlUtils.lerp(cameraHeight, initHeight, zoomLevel);
     camera.position.y = cameraHeight;
     camera.lookAt(new THREE.Vector3(0,(cameraHeight),0));
   }
   
-  function centerCameraOverTime(step){
+  function animateZoom(step){
     if (isAnimating){
       progress += step;
       progress = ControlUtils.clamp(progress, 0, 1); 
+      
       cameraHeight = ControlUtils.lerp(cameraHeight, initHeight, progress);
-      cameraDist = ControlUtils.lerp(cameraDist, settings.maxZoomDistance, progress);
+      
+      if (zoomingOut) { 
+        cameraDist = ControlUtils.lerp(cameraDist, settings.maxZoomDistance, progress);
+      } else {
+        cameraDist = ControlUtils.lerp(cameraDist, settings.minZoomDistance, progress);
+      }
+      
       camera.position.y = cameraHeight;
       camera.position.x = cameraDist;
       camera.lookAt(new THREE.Vector3(0,(cameraHeight),0));
-      console.log(progress);
     }
     if (progress == 1){
-      console.log("STOP");
       isAnimating = false;
       progress = 0;
     }  
@@ -173,17 +183,17 @@ function CameraDollyControl(camera, scene, rendererElement, options){
     var deltaY = 0;
         
     if (mouseDown) {
-      deltaX = mouseX - event.pageX;
-      deltaY = mouseY - event.pageY;
+      deltaX = mouse.x - event.pageX;
+      deltaY = mouse.y - event.pageY;
     }
         
-    mouseX = event.pageX;
-    mouseY = event.pageY;  
+    mouse.x = event.pageX;
+    mouse.y = event.pageY;  
     return [deltaX, deltaY];
   } 
   
   this.animate = function(step){
-    centerCameraOverTime(step);
+    animateZoom(step);
   }
   
   return this;
@@ -281,7 +291,7 @@ function CameraDollyControl(camera, scene, rendererElement, options){
   var startPosX = 0;
   var startPosY = 0;
   var startTime;
-  var lastTimeStamp;
+  var lastTouchTime;
    
   this.deltaX = 0;
   this.deltaY = 0;
@@ -309,9 +319,12 @@ function CameraDollyControl(camera, scene, rendererElement, options){
      console.log("tracker", posX, posY);
      startTime = event.timeStamp;
      if (event.touches.length == 1){
-       self.deltaX, self.deltaY = 0; 
-       startPosX, posX = event.touches[0].pageX;
-       startPosY, posY = event.touches[0].pageY;
+       self.deltaX = 0; 
+       self.deltaY = 0;
+       startPosX = event.touches[0].pageX;
+       posX = startPosX;
+       startPosY = event.touches[0].pageY;
+       posY = startPosY;
      } else if (event.touches.length == 2){
        currentDistance = touchDistance(event);
        lastDistance = currentDistance;
@@ -321,10 +334,9 @@ function CameraDollyControl(camera, scene, rendererElement, options){
    function onTouchMove(event){
      event.preventDefault();
      if (event.touches.length == 1){
-        console.log("last", posX);
         getTouchMoveDelta(event);
-        console.log("current", posX, self.deltaX);
         detectDirection();
+        console.log(self.deltaX);
         self.speedX = self.deltaX / (event.timeStamp - startTime);
         self.speedY = self.deltaY / (event.timeStamp - startTime);
      } else if (event.touches.length == 2) {
@@ -335,7 +347,8 @@ function CameraDollyControl(camera, scene, rendererElement, options){
    }
    
    function onTouchEnd(event){
-     self.deltaX, self.deltaY = 0;
+     self.deltaX = 0;
+     self.deltaY = 0;
      self.deltaDistance = 0;
    }  
    
@@ -527,13 +540,12 @@ function CameraDollyControl(camera, scene, rendererElement, options){
     camera.position.x = settings.cameraXPosition;
     var center = meshes[1].geometry.boundingBox.center().y * .12;
     camera.position.y = center;
-    console.log(center, camera.position);
     camera.lookAt(new THREE.Vector3(0, center, 0));
     var cameraSettings = {
       maxZoomDistance: settings.cameraXPosition,
       maxCameraHeight: meshes[1].geometry.boundingBox.size().y * .1 
     }
-    cameraControl = new CameraDollyControl(camera, scene, rendererElement, cameraSettings);
+    cameraControl = new CameraDollyControl(camera, meshes, rendererElement, cameraSettings);
   }
   
   function setupMeshes(){
@@ -549,9 +561,7 @@ function CameraDollyControl(camera, scene, rendererElement, options){
       
     meshes[1].visible = false;
     meshes[0].visible = true;
-    console.log(meshes[0].geometry);
     var bbox1 = new THREE.BoundingBoxHelper(meshes[0], 0x00ff00);
-    console.log(meshes[0].geometry.boundingBox.max.y, meshes[0].geometry.boundingBox.min.y);
     var bbox2 = new THREE.BoundingBoxHelper(meshes[1], 0xff0000);
     bbox1.update();
     bbox2.update();
@@ -615,7 +625,7 @@ function CameraDollyControl(camera, scene, rendererElement, options){
   function render(){
     requestAnimationFrame(render);
     
-    cameraControl.animate(.02);
+    cameraControl.animate(.04);
     renderer.render(scene, camera);
   }
   
