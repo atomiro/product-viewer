@@ -228,7 +228,7 @@ function Viewer(textureArray, element, options){
   function render(){
     requestAnimationFrame(render);
     
-    cameraControl.animate(.04);
+    cameraControl.animate();
     renderer.render(scene, camera);
   }
   

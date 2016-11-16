@@ -6,7 +6,8 @@ function CameraDollyControl(camera, meshes, rendererElement, options){
     minZoomDistance: -12,
     maxZoomDistance: -50,
     minCameraHeight: 2.5,
-    maxCameraHeight: 14.5
+    maxCameraHeight: 14.5,
+    animationSpeed: .04
   };
   
   this.panLockAt;
@@ -64,11 +65,12 @@ function CameraDollyControl(camera, meshes, rendererElement, options){
   function onTouchEnd(event){
      var delay = 300;
      var delta = lastTouchTime ? event.timeStamp - lastTouchTime : 0;
-     if (delta < delay && delta > 30){
-       console.log('dolly doubletap');
-       event.preventDefault();
-       autoZoom();
-       console.log(event.touches);
+     console.log(event.changedTouches);
+     if (event.changedTouches.length == 1){
+       if (delta < delay && delta > 30){
+         event.preventDefault();
+         autoZoom();
+       }
      }
      lastTouchTime = event.timeStamp;
   }
@@ -77,9 +79,9 @@ function CameraDollyControl(camera, meshes, rendererElement, options){
     isAnimating = true;
     var zoomThreshold = Math.abs(settings.maxZoomDistance - settings.minZoomDistance / 2);
     if (Math.abs(camera.position.x) > zoomThreshold) {
-      zoomingOut = false;
+      if (progress == 0) { zoomingOut = false; }
     } else {
-      zoomingOut = true;
+      if (progress == 0) { zoomingOut = true; }
     }
   }
   
@@ -119,6 +121,7 @@ function CameraDollyControl(camera, meshes, rendererElement, options){
         }
      }
      else if (event.touches.length == 2){
+        isAnimating = false;
         interactiveZoom(touchTracker.deltaDistance, .5);
      }
    }
@@ -163,7 +166,7 @@ function CameraDollyControl(camera, meshes, rendererElement, options){
       camera.position.x = cameraDist;
       camera.lookAt(new THREE.Vector3(0,(cameraHeight),0));
     }
-    if (progress == 1){
+    if (progress >= 1){
       isAnimating = false;
       progress = 0;
     }  
@@ -192,8 +195,8 @@ function CameraDollyControl(camera, meshes, rendererElement, options){
     return [deltaX, deltaY];
   } 
   
-  this.animate = function(step){
-    animateZoom(step);
+  this.animate = function(){
+    animateZoom(settings.animationSpeed);
   }
   
   return this;
