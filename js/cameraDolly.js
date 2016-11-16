@@ -50,9 +50,7 @@ function CameraDollyControl(camera, meshes, rendererElement, options){
     rendererElement.mousedown(onMouseDown);
     rendererElement.mouseup(onMouseUp);
     rendererElement.hover(onHoverIn, onHoverOut);
-    
-    var debounce = _.debounce(onMouseWheel, 10, {leading: true});
-    $(window).on('mousewheel', onMouseWheel);
+    window.addEventListener('wheel', onMouseWheel);
     
     rendererElement[0].addEventListener('touchmove', onTouchMove, false);
     rendererElement[0].addEventListener('touchend', onTouchEnd, false);
@@ -106,7 +104,7 @@ function CameraDollyControl(camera, meshes, rendererElement, options){
     if (mouseIn){
       isAnimating = false;
       event.preventDefault();
-      var deltaY = ControlUtils.clamp(event.originalEvent.deltaY, -100, 100); 
+      var deltaY = ControlUtils.clamp(event.deltaY, -100, 100); 
       interactiveZoom(deltaY, .2);
     }  
   } 
