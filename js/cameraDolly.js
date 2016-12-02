@@ -27,7 +27,7 @@ function CameraDollyControl(camera, meshes, rendererElement, options){
   var lastDistance = 0;
   var currentDistance = 0;
   
-  var touchPanSpeedFactor = .4;
+  var touchPanSpeedFactor = .2;
   var mousePanSpeedFactor = .035;
   
   var self = this;
@@ -63,9 +63,8 @@ function CameraDollyControl(camera, meshes, rendererElement, options){
   function onTouchEnd(event){
      var delay = 300;
      var delta = lastTouchTime ? event.timeStamp - lastTouchTime : 0;
-     console.log(event.changedTouches);
      if (event.changedTouches.length == 1){
-       if (delta < delay && delta > 30){
+       if (delta < delay && delta > 100){
          event.preventDefault();
          autoZoom();
        }
@@ -113,7 +112,7 @@ function CameraDollyControl(camera, meshes, rendererElement, options){
      event.preventDefault();
      if (event.touches.length == 1){
         if (Math.abs(cameraDist) < self.panLockAt) {
-          if (touchTracker.direction == "VERTICAL"){ 
+          if (touchTracker.axis == "VERTICAL"){ 
             pan(touchTracker.speedY, touchPanSpeedFactor);
           } 
         }

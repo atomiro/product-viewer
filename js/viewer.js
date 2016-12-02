@@ -95,7 +95,7 @@ function Viewer(textureArray, element, options){
   }
   
   function setup(sceneFile){
-    renderer = new THREE.WebGLRenderer({ antialias: true });
+    renderer = new THREE.WebGLRenderer({ antialias:true });
     renderer.setPixelRatio(DEVICE_PIXEL_RATIO); 
     renderer.setSize(canvasWidth, canvasHeight);
     

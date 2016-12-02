@@ -27,7 +27,7 @@ function CameraDollyControl(camera, meshes, rendererElement, options){
   var lastDistance = 0;
   var currentDistance = 0;
   
-  var touchPanSpeedFactor = .4;
+  var touchPanSpeedFactor = .2;
   var mousePanSpeedFactor = .035;
   
   var self = this;
@@ -63,9 +63,8 @@ function CameraDollyControl(camera, meshes, rendererElement, options){
   function onTouchEnd(event){
      var delay = 300;
      var delta = lastTouchTime ? event.timeStamp - lastTouchTime : 0;
-     console.log(event.changedTouches);
      if (event.changedTouches.length == 1){
-       if (delta < delay && delta > 30){
+       if (delta < delay && delta > 100){
          event.preventDefault();
          autoZoom();
        }
@@ -113,7 +112,7 @@ function CameraDollyControl(camera, meshes, rendererElement, options){
      event.preventDefault();
      if (event.touches.length == 1){
         if (Math.abs(cameraDist) < self.panLockAt) {
-          if (touchTracker.direction == "VERTICAL"){ 
+          if (touchTracker.axis == "VERTICAL"){ 
             pan(touchTracker.speedY, touchPanSpeedFactor);
           } 
         }
@@ -206,7 +205,7 @@ function CameraDollyControl(camera, meshes, rendererElement, options){
 //
    this.meshes = meshes;
    this.mouseSpeedFactor = .8;
-   this.touchSpeedFactor = .35;
+   this.touchSpeedFactor = 10;
    
    //INTERNALS 
    
@@ -234,9 +233,10 @@ function CameraDollyControl(camera, meshes, rendererElement, options){
    }
    
   function onMouseMove(event) {
-     var delta = getMouseMoveDelta(event);
-     if (Math.abs(delta[0]) > Math.abs(delta[1])){
-       var deltaX = ControlUtils.clamp(delta[0], -30, 30);
+     var deltaX = getMouseMoveDelta("X", event);
+     var deltaY = getMouseMoveDelta("Y", event);
+     if (Math.abs(deltaX) > Math.abs(deltaY)){
+       deltaX = ControlUtils.clamp(deltaX, -30, 30);
        var angle = (deltaX * Math.PI / 180) * self.mouseSpeedFactor;
        rotateTo(angle);
      }
@@ -253,8 +253,8 @@ function CameraDollyControl(camera, meshes, rendererElement, options){
    function onTouchMove(event){
      event.preventDefault();
      if (event.touches.length == 1){
-       if (touchTracker.direction == "HORIZONTAL"){
-          angle = touchTracker.speedX * self.touchSpeedFactor;
+       if (touchTracker.axis == "HORIZONTAL"){
+          var angle = (touchTracker.speedX * Math.PI / 180) * self.touchSpeedFactor;
           rotateTo(angle); 
         }
      }
@@ -262,12 +262,11 @@ function CameraDollyControl(camera, meshes, rendererElement, options){
 
    function rotateTo(angle){
      for (var i = 0; i < meshes.length; i++) {
-       mesh = meshes[i];
-       mesh.rotateOnAxis( new THREE.Vector3(0,1,0), -angle);
+       meshes[i].rotateOnAxis( new THREE.Vector3(0,1,0), -angle);
      }  
    }
    
-   function getMouseMoveDelta(event) {
+   function getMouseMoveDelta(axis, event) {
         var deltaX = 0;
         var deltaY = 0;
         
@@ -279,7 +278,13 @@ function CameraDollyControl(camera, meshes, rendererElement, options){
         mouseX = event.pageX;
         mouseY = event.pageY;
         
-        return [deltaX, deltaY];
+        if (axis.toLowerCase() == "x"){ 
+          return deltaX;
+        }
+        else if (axis.toLowerCase() == "y"){
+          return deltaY;
+        }
+        
    } 
    
    return this;
@@ -298,10 +303,14 @@ function CameraDollyControl(camera, meshes, rendererElement, options){
   this.deltaY = 0;
   this.speedX = 0;
   this.speedY = 0;
-  this.direction = "HORIZONTAL";
+  this.axis = "HORIZONTAL";
   
+  var lastPosition = {x: 0, y: 0}
   var lastDistance = 0;
   var currentDistance = 0;
+  
+  var currentDirection;
+  var lastDirection;
   
   this.deltaDistance = 0;
   
@@ -317,8 +326,8 @@ function CameraDollyControl(camera, meshes, rendererElement, options){
   } 
     
   function onTouchStart(event){
-     console.log("tracker", posX, posY);
      startTime = event.timeStamp;
+     lastTouchTime = event.timeStamp;
      if (event.touches.length == 1){
        self.deltaX = 0; 
        self.deltaY = 0;
@@ -326,6 +335,8 @@ function CameraDollyControl(camera, meshes, rendererElement, options){
        posX = startPosX;
        startPosY = event.touches[0].pageY;
        posY = startPosY;
+       lastPosition.x = event.touches[0].pageX;
+       lastPosition.y = event.touches[0].pageY;
      } else if (event.touches.length == 2){
        currentDistance = touchDistance(event);
        lastDistance = currentDistance;
@@ -336,10 +347,11 @@ function CameraDollyControl(camera, meshes, rendererElement, options){
      event.preventDefault();
      if (event.touches.length == 1){
         getTouchMoveDelta(event);
-        detectDirection();
-        console.log(self.deltaX);
-        self.speedX = self.deltaX / (event.timeStamp - startTime);
-        self.speedY = self.deltaY / (event.timeStamp - startTime);
+        detectAxis();
+        self.speedX = self.deltaX / (event.timeStamp - lastTouchTime);
+        self.speedY = self.deltaY / (event.timeStamp - lastTouchTime);
+        
+        lastTouchTime = event.timeStamp;
      } else if (event.touches.length == 2) {
         currentDistance = touchDistance(event);
         self.deltaDistance = currentDistance - lastDistance;
@@ -354,10 +366,13 @@ function CameraDollyControl(camera, meshes, rendererElement, options){
    }  
    
    function getTouchMoveDelta(event){
-      self.deltaX = startPosX - posX;
-      self.deltaY = startPosY - posY;
       posX = event.touches[0].pageX;
       posY = event.touches[0].pageY;
+        
+      self.deltaX = lastPosition.x - event.touches[0].pageX;
+      self.deltaY = lastPosition.y - event.touches[0].pageY;
+      lastPosition.x = event.touches[0].pageX; 
+      lastPosition.y = event.touches[0].pageY; 
    }
    
    function touchDistance(event){
@@ -368,13 +383,14 @@ function CameraDollyControl(camera, meshes, rendererElement, options){
 	  return distance;
    }
    
-   function detectDirection(){
+   function detectAxis(){
      if (Math.abs(self.deltaY) > Math.abs(self.deltaX)){
-       self.direction = "VERTICAL";
+       self.axis = "VERTICAL";
      } else {
-       self.direction = "HORIZONTAL";
+       self.axis = "HORIZONTAL";
      }
    }
+
   
    this.getDeltas = function(event){
      getTouchMoveDelta(event);
@@ -493,7 +509,7 @@ function CameraDollyControl(camera, meshes, rendererElement, options){
   }
   
   function setup(sceneFile){
-    renderer = new THREE.WebGLRenderer({ antialias: true });
+    renderer = new THREE.WebGLRenderer({ antialias:true });
     renderer.setPixelRatio(DEVICE_PIXEL_RATIO); 
     renderer.setSize(canvasWidth, canvasHeight);
     
