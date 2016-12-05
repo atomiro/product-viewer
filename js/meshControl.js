@@ -3,8 +3,8 @@ function MeshControl(meshes, rendererElement){
 // Rotate multiple meshes by clicking and dragging side to side
 //
    this.meshes = meshes;
-   this.mouseSpeedFactor = .8;
-   this.touchSpeedFactor = 10;
+   this.mouseSpeedFactor = .7;
+   this.touchSpeedFactor = 15;
    
    //INTERNALS 
    

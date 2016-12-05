@@ -27,8 +27,8 @@ function CameraDollyControl(camera, meshes, rendererElement, options){
   var lastDistance = 0;
   var currentDistance = 0;
   
-  var touchPanSpeedFactor = .2;
-  var mousePanSpeedFactor = .035;
+  var touchPanSpeedFactor = .3;
+  var mousePanSpeedFactor = .015;
   
   var self = this;
   
@@ -119,7 +119,7 @@ function CameraDollyControl(camera, meshes, rendererElement, options){
      }
      else if (event.touches.length == 2){
         isAnimating = false;
-        interactiveZoom(touchTracker.deltaDistance, .5);
+        interactiveZoom(touchTracker.deltaDistance, .2);
      }
    }
   
@@ -204,8 +204,8 @@ function CameraDollyControl(camera, meshes, rendererElement, options){
 // Rotate multiple meshes by clicking and dragging side to side
 //
    this.meshes = meshes;
-   this.mouseSpeedFactor = .8;
-   this.touchSpeedFactor = 10;
+   this.mouseSpeedFactor = .7;
+   this.touchSpeedFactor = 15;
    
    //INTERNALS 
    
