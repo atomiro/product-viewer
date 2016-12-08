@@ -18,10 +18,10 @@
     
       var settings = { 
         sceneBackgroundColor: "rgb(0, 0, 0)",
-        sceneFile: "scene_lights_adjusted.json"
+        sceneFile: "assets/scene_lights_adjusted.json"
       }
       var viewerDiv = $('.preview');
-      var viewer = new Viewer(['Azalea-V1S13-01.jpg', 'Bismuth-V1S12-Grey-01.jpg'], viewerDiv, settings);
+      var viewer = new Viewer(['assets/Azalea-V1S13-01.jpg', 'assets/Bismuth-V1S12-Grey-01.jpg'], viewerDiv, settings);
       
       viewerDiv.on('viewer.loaded', function(){ 
         $(this).addClass("show-viewer"); 
@@ -80,8 +80,8 @@
 
   <div class="controls">
    <button class="switch">Switch Model</button>
-   <button class="show-texture" data-texture="Azalea-V1S13-01.jpg">Azalea</button>
-   <button class="show-texture" data-texture="Bismuth-V1S12-Grey-01.jpg">Bismuth</button>
+   <button class="show-texture" data-texture="assets/Azalea-V1S13-01.jpg">Azalea</button>
+   <button class="show-texture" data-texture="assets/Bismuth-V1S12-Grey-01.jpg">Bismuth</button>
    
    <h3>Controls</h3>
    <p>

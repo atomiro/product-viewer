@@ -1,16 +1,25 @@
 //
 // Zoom with scroll wheel and vertical pan by clicking a dragging up and down
 //
-function CameraDollyControl(camera, meshes, rendererElement, options){
+function CameraDollyControl(camera, rendererElement, options){
+
   var settings = {
     minZoomDistance: -12,
     maxZoomDistance: -50,
     minCameraHeight: 2.5,
     maxCameraHeight: 14.5,
-    animationSpeed: .04
+    animationSpeed: .04,
+    touchPanSpeedFactor: .3,
+    mousePanSpeedFactor: .015,
+    interactiveZoomSpeedFactor: .2
   };
   
   this.panLockAt;
+  
+  var zoomThreshold;
+  var totalZoomDist;
+  
+  var touchTracker = new TouchTracker(rendererElement); 
   
   var initHeight = camera.position.y;
   var cameraHeight = camera.position.y;
@@ -21,28 +30,30 @@ function CameraDollyControl(camera, meshes, rendererElement, options){
   var mouseIn = false;
   var initMouseY = 0;
   
+  var scrollDelta;
+  
   var touchStartTime;
   var lastTouchTime;
   
   var lastDistance = 0;
   var currentDistance = 0;
   
-  var touchPanSpeedFactor = .3;
-  var mousePanSpeedFactor = .015;
-  
-  var self = this;
-  
-  var touchTracker = new TouchTracker(rendererElement); 
-  
   var isAnimating = false;
   var zoomingOut = false;
   var progress = 0; 
   
+  var self = this;
+  
   init();
   
   function init(){
+  
     $.extend(settings, options);
+    
     self.panLockAt = Math.abs(settings.maxZoomDistance) - 3;
+    
+    totalZoomDist = Math.abs(settings.minZoomDistance - settings.maxZoomDistance);
+    zoomThreshold = Math.abs(settings.maxZoomDistance - settings.minZoomDistance/ 2);
     
     rendererElement.dblclick(onDblClick);
     
@@ -50,10 +61,12 @@ function CameraDollyControl(camera, meshes, rendererElement, options){
     rendererElement.mousedown(onMouseDown);
     rendererElement.mouseup(onMouseUp);
     rendererElement.hover(onHoverIn, onHoverOut);
+    
     window.addEventListener('wheel', onMouseWheel);
     
     rendererElement[0].addEventListener('touchmove', onTouchMove, false);
     rendererElement[0].addEventListener('touchend', onTouchEnd, false);
+    
   }
   
   function onDblClick(event){
@@ -62,24 +75,28 @@ function CameraDollyControl(camera, meshes, rendererElement, options){
   
   function onTouchEnd(event){
      var delay = 300;
+     
      var delta = lastTouchTime ? event.timeStamp - lastTouchTime : 0;
+     
      if (event.changedTouches.length == 1){
        if (delta < delay && delta > 100){
          event.preventDefault();
          autoZoom();
        }
      }
+     
      lastTouchTime = event.timeStamp;
   }
   
   function autoZoom(){
     isAnimating = true;
-    var zoomThreshold = Math.abs(settings.maxZoomDistance - settings.minZoomDistance / 2);
+    
     if (Math.abs(camera.position.x) > zoomThreshold) {
       if (progress == 0) { zoomingOut = false; }
     } else {
       if (progress == 0) { zoomingOut = true; }
     }
+    
   }
   
   function onMouseDown(event){ mouseDown = true; }
@@ -91,20 +108,23 @@ function CameraDollyControl(camera, meshes, rendererElement, options){
   function onHoverOut(event){ mouseIn = false; } 
   
   function onMouseMove(event){
+  
     if (Math.abs(cameraDist) < self.panLockAt) {
       var delta = getMouseMoveDelta(event);
+      
       if (Math.abs(delta[1]) > Math.abs(delta[0])){
-        pan(delta[1], mousePanSpeedFactor);
+        pan(delta[1], settings.mousePanSpeedFactor);
       }
     }
+    
   }
   
   function onMouseWheel(event){
     if (mouseIn){
       isAnimating = false;
       event.preventDefault();
-      var deltaY = ControlUtils.clamp(event.deltaY, -100, 100); 
-      interactiveZoom(deltaY, .2);
+      scrollDelta = ControlUtils.clamp(event.deltaY, -100, 100); 
+      interactiveZoom(scrollDelta, settings.interactiveZoomSpeedFactor);
     }  
   } 
    
@@ -113,13 +133,13 @@ function CameraDollyControl(camera, meshes, rendererElement, options){
      if (event.touches.length == 1){
         if (Math.abs(cameraDist) < self.panLockAt) {
           if (touchTracker.axis == "VERTICAL"){ 
-            pan(touchTracker.speedY, touchPanSpeedFactor);
+            pan(touchTracker.speedY, settings.touchPanSpeedFactor);
           } 
         }
      }
      else if (event.touches.length == 2){
         isAnimating = false;
-        interactiveZoom(touchTracker.deltaDistance, .2);
+        interactiveZoom(touchTracker.deltaDistance, settings.interactiveZoomSpeedFactor);
      }
    }
   
@@ -138,9 +158,7 @@ function CameraDollyControl(camera, meshes, rendererElement, options){
   }
   
   function centerCamera(){
-    var totalZoomDist = Math.abs(settings.minZoomDistance - settings.maxZoomDistance);
-    var zoomLevel = Math.abs(cameraDist - settings.minZoomDistance) / totalZoomDist;
-    
+    zoomLevel = Math.abs(cameraDist - settings.minZoomDistance) / totalZoomDist;
     cameraHeight = ControlUtils.lerp(cameraHeight, initHeight, zoomLevel);
     camera.position.y = cameraHeight;
     camera.lookAt(new THREE.Vector3(0,(cameraHeight),0));
@@ -199,13 +217,16 @@ function CameraDollyControl(camera, meshes, rendererElement, options){
   return this;
 
 }
-;function MeshControl(meshes, rendererElement){
+;function MeshControl(meshes, rendererElement, options){
 //
 // Rotate multiple meshes by clicking and dragging side to side
 //
+   settings = {
+     mouseSpeedFactor: .7,
+     touchSpeedFactor: 15
+   }
+   
    this.meshes = meshes;
-   this.mouseSpeedFactor = .7;
-   this.touchSpeedFactor = 15;
    
    //INTERNALS 
    
@@ -213,6 +234,9 @@ function CameraDollyControl(camera, meshes, rendererElement, options){
    var mouseY = 0;
    var initMouseX = 0;
    var initMouseY = 0;
+   
+   var mouseDeltaX = 0;
+   var mouseDeltaY = 0;
    
    var mouseDown = false;
    var touchStartTime;
@@ -225,6 +249,8 @@ function CameraDollyControl(camera, meshes, rendererElement, options){
    init();
    
    function init(){
+     $.extend(settings, options);
+     
      rendererElement.mousedown(onMouseDown);
      rendererElement.mouseup(onMouseUp);
      rendererElement.mousemove(onMouseMove);
@@ -233,11 +259,10 @@ function CameraDollyControl(camera, meshes, rendererElement, options){
    }
    
   function onMouseMove(event) {
-     var deltaX = getMouseMoveDelta("X", event);
-     var deltaY = getMouseMoveDelta("Y", event);
-     if (Math.abs(deltaX) > Math.abs(deltaY)){
-       deltaX = ControlUtils.clamp(deltaX, -30, 30);
-       var angle = (deltaX * Math.PI / 180) * self.mouseSpeedFactor;
+     updateMouseMoveDelta(event);
+     if (Math.abs(mouseDeltaX) > Math.abs(mouseDeltaY)){
+       mouseDeltaX = ControlUtils.clamp(mouseDeltaX, -30, 30);
+       var angle = (mouseDeltaX * Math.PI / 180) * settings.mouseSpeedFactor;
        rotateTo(angle);
      }
    }
@@ -254,7 +279,7 @@ function CameraDollyControl(camera, meshes, rendererElement, options){
      event.preventDefault();
      if (event.touches.length == 1){
        if (touchTracker.axis == "HORIZONTAL"){
-          var angle = (touchTracker.speedX * Math.PI / 180) * self.touchSpeedFactor;
+          var angle = (touchTracker.speedX * Math.PI / 180) * settings.touchSpeedFactor;
           rotateTo(angle); 
         }
      }
@@ -266,24 +291,17 @@ function CameraDollyControl(camera, meshes, rendererElement, options){
      }  
    }
    
-   function getMouseMoveDelta(axis, event) {
-        var deltaX = 0;
-        var deltaY = 0;
+   function updateMouseMoveDelta(event) {
+        mouseDeltaX = 0;
+        mouseDeltaY = 0;
         
         if (mouseDown) {
-          deltaX = mouseX - event.pageX;
-          deltaY = mouseY - event.pageY;
+          mouseDeltaX = mouseX - event.pageX;
+          mouseDeltaY = mouseY - event.pageY;
         }
         
         mouseX = event.pageX;
         mouseY = event.pageY;
-        
-        if (axis.toLowerCase() == "x"){ 
-          return deltaX;
-        }
-        else if (axis.toLowerCase() == "y"){
-          return deltaY;
-        }
         
    } 
    
@@ -384,10 +402,16 @@ function CameraDollyControl(camera, meshes, rendererElement, options){
    }
    
    function detectAxis(){
+     var axisDiff = Math.abs(self.deltaY - self.deltaX);
+     console.log(axisDiff);
      if (Math.abs(self.deltaY) > Math.abs(self.deltaX)){
-       self.axis = "VERTICAL";
+       if (axisDiff > 5) {
+         self.axis = "VERTICAL";
+       }  
      } else {
-       self.axis = "HORIZONTAL";
+       if (axisDiff > 5) {
+         self.axis = "HORIZONTAL";
+       }  
      }
    }
 
@@ -494,7 +518,7 @@ function CameraDollyControl(camera, meshes, rendererElement, options){
   
   function loadScene(){
     // load scene json file created with three.js editor
-    var sceneFile = settings.assetPath + settings.sceneFile;
+    var sceneFile = settings.sceneFile;
     var objloader = new THREE.ObjectLoader();
         
     objloader.load(sceneFile,
@@ -517,9 +541,6 @@ function CameraDollyControl(camera, meshes, rendererElement, options){
     
     scene = sceneFile;
     scene.background = new THREE.Color(settings.sceneBackgroundColor);
-    
-    var grid = new THREE.GridHelper( 200, 50, 0x0000ff, 0x808080 );
-	scene.add(grid);
     
     textureManager = new THREE.LoadingManager();
     
@@ -555,14 +576,16 @@ function CameraDollyControl(camera, meshes, rendererElement, options){
   function setupCamera(){
     camera = new THREE.PerspectiveCamera(settings.fov, settings.aspectRatio, CAM_NEAR_PLANE, CAM_FAR_PLANE);
     camera.position.x = settings.cameraXPosition;
+    
     var center = meshes[1].geometry.boundingBox.center().y * .12;
     camera.position.y = center;
     camera.lookAt(new THREE.Vector3(0, center, 0));
+    
     var cameraSettings = {
       maxZoomDistance: settings.cameraXPosition,
       maxCameraHeight: meshes[1].geometry.boundingBox.size().y * .1 
     }
-    cameraControl = new CameraDollyControl(camera, meshes, rendererElement, cameraSettings);
+    cameraControl = new CameraDollyControl(camera, rendererElement, cameraSettings);
   }
   
   function setupMeshes(){
@@ -578,12 +601,6 @@ function CameraDollyControl(camera, meshes, rendererElement, options){
       
     meshes[1].visible = false;
     meshes[0].visible = true;
-    var bbox1 = new THREE.BoundingBoxHelper(meshes[0], 0x00ff00);
-    var bbox2 = new THREE.BoundingBoxHelper(meshes[1], 0xff0000);
-    bbox1.update();
-    bbox2.update();
-    //scene.add(bbox1);
-    //scene.add(bbox2);
       
     meshControl = new MeshControl(meshes, rendererElement);
   }
@@ -598,17 +615,17 @@ function CameraDollyControl(camera, meshes, rendererElement, options){
     return texture;
   }
   
-  function loadTexture(textureFileName){
-    texturePath = settings.assetPath + textureFileName;
+  function loadTexture(textureFile){
+    texturePath = textureFile;
     textureLoader = new THREE.TextureLoader(textureManager);
       
     textureLoader.load(texturePath,
       function(texture){
         console.log("loader success");
-        storeTexture(texture, textureFileName);
+        storeTexture(texture, textureFile);
       },
       function(xhr){
-         console.log("Texture " + textureFileName + " " + Math.round(xhr.loaded / xhr.total * 100) + "%" );
+         console.log("Texture " + textureFile + " " + Math.round(xhr.loaded / xhr.total * 100) + "%" );
       },
       function(xhr){
         console.log("loader error");

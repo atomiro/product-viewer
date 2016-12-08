@@ -1,7 +1,6 @@
 function Viewer(textureArray, element, options){
 
   var settings = {
-    assetPath: "assets/",
     sceneFile: "models_scene.json",
     fov: 23,
     aspectRatio: 4/5,
@@ -80,7 +79,7 @@ function Viewer(textureArray, element, options){
   
   function loadScene(){
     // load scene json file created with three.js editor
-    var sceneFile = settings.assetPath + settings.sceneFile;
+    var sceneFile = settings.sceneFile;
     var objloader = new THREE.ObjectLoader();
         
     objloader.load(sceneFile,
@@ -103,9 +102,6 @@ function Viewer(textureArray, element, options){
     
     scene = sceneFile;
     scene.background = new THREE.Color(settings.sceneBackgroundColor);
-    
-    var grid = new THREE.GridHelper( 200, 50, 0x0000ff, 0x808080 );
-	scene.add(grid);
     
     textureManager = new THREE.LoadingManager();
     
@@ -141,14 +137,16 @@ function Viewer(textureArray, element, options){
   function setupCamera(){
     camera = new THREE.PerspectiveCamera(settings.fov, settings.aspectRatio, CAM_NEAR_PLANE, CAM_FAR_PLANE);
     camera.position.x = settings.cameraXPosition;
+    
     var center = meshes[1].geometry.boundingBox.center().y * .12;
     camera.position.y = center;
     camera.lookAt(new THREE.Vector3(0, center, 0));
+    
     var cameraSettings = {
       maxZoomDistance: settings.cameraXPosition,
       maxCameraHeight: meshes[1].geometry.boundingBox.size().y * .1 
     }
-    cameraControl = new CameraDollyControl(camera, meshes, rendererElement, cameraSettings);
+    cameraControl = new CameraDollyControl(camera, rendererElement, cameraSettings);
   }
   
   function setupMeshes(){
@@ -164,12 +162,6 @@ function Viewer(textureArray, element, options){
       
     meshes[1].visible = false;
     meshes[0].visible = true;
-    var bbox1 = new THREE.BoundingBoxHelper(meshes[0], 0x00ff00);
-    var bbox2 = new THREE.BoundingBoxHelper(meshes[1], 0xff0000);
-    bbox1.update();
-    bbox2.update();
-    //scene.add(bbox1);
-    //scene.add(bbox2);
       
     meshControl = new MeshControl(meshes, rendererElement);
   }
@@ -184,17 +176,17 @@ function Viewer(textureArray, element, options){
     return texture;
   }
   
-  function loadTexture(textureFileName){
-    texturePath = settings.assetPath + textureFileName;
+  function loadTexture(textureFile){
+    texturePath = textureFile;
     textureLoader = new THREE.TextureLoader(textureManager);
       
     textureLoader.load(texturePath,
       function(texture){
         console.log("loader success");
-        storeTexture(texture, textureFileName);
+        storeTexture(texture, textureFile);
       },
       function(xhr){
-         console.log("Texture " + textureFileName + " " + Math.round(xhr.loaded / xhr.total * 100) + "%" );
+         console.log("Texture " + textureFile + " " + Math.round(xhr.loaded / xhr.total * 100) + "%" );
       },
       function(xhr){
         console.log("loader error");

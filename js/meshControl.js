@@ -1,10 +1,13 @@
-function MeshControl(meshes, rendererElement){
+function MeshControl(meshes, rendererElement, options){
 //
 // Rotate multiple meshes by clicking and dragging side to side
 //
+   settings = {
+     mouseSpeedFactor: .7,
+     touchSpeedFactor: 15
+   }
+   
    this.meshes = meshes;
-   this.mouseSpeedFactor = .7;
-   this.touchSpeedFactor = 15;
    
    //INTERNALS 
    
@@ -12,6 +15,9 @@ function MeshControl(meshes, rendererElement){
    var mouseY = 0;
    var initMouseX = 0;
    var initMouseY = 0;
+   
+   var mouseDeltaX = 0;
+   var mouseDeltaY = 0;
    
    var mouseDown = false;
    var touchStartTime;
@@ -24,6 +30,8 @@ function MeshControl(meshes, rendererElement){
    init();
    
    function init(){
+     $.extend(settings, options);
+     
      rendererElement.mousedown(onMouseDown);
      rendererElement.mouseup(onMouseUp);
      rendererElement.mousemove(onMouseMove);
@@ -32,11 +40,10 @@ function MeshControl(meshes, rendererElement){
    }
    
   function onMouseMove(event) {
-     var deltaX = getMouseMoveDelta("X", event);
-     var deltaY = getMouseMoveDelta("Y", event);
-     if (Math.abs(deltaX) > Math.abs(deltaY)){
-       deltaX = ControlUtils.clamp(deltaX, -30, 30);
-       var angle = (deltaX * Math.PI / 180) * self.mouseSpeedFactor;
+     updateMouseMoveDelta(event);
+     if (Math.abs(mouseDeltaX) > Math.abs(mouseDeltaY)){
+       mouseDeltaX = ControlUtils.clamp(mouseDeltaX, -30, 30);
+       var angle = (mouseDeltaX * Math.PI / 180) * settings.mouseSpeedFactor;
        rotateTo(angle);
      }
    }
@@ -53,7 +60,7 @@ function MeshControl(meshes, rendererElement){
      event.preventDefault();
      if (event.touches.length == 1){
        if (touchTracker.axis == "HORIZONTAL"){
-          var angle = (touchTracker.speedX * Math.PI / 180) * self.touchSpeedFactor;
+          var angle = (touchTracker.speedX * Math.PI / 180) * settings.touchSpeedFactor;
           rotateTo(angle); 
         }
      }
@@ -65,24 +72,17 @@ function MeshControl(meshes, rendererElement){
      }  
    }
    
-   function getMouseMoveDelta(axis, event) {
-        var deltaX = 0;
-        var deltaY = 0;
+   function updateMouseMoveDelta(event) {
+        mouseDeltaX = 0;
+        mouseDeltaY = 0;
         
         if (mouseDown) {
-          deltaX = mouseX - event.pageX;
-          deltaY = mouseY - event.pageY;
+          mouseDeltaX = mouseX - event.pageX;
+          mouseDeltaY = mouseY - event.pageY;
         }
         
         mouseX = event.pageX;
         mouseY = event.pageY;
-        
-        if (axis.toLowerCase() == "x"){ 
-          return deltaX;
-        }
-        else if (axis.toLowerCase() == "y"){
-          return deltaY;
-        }
         
    } 
    

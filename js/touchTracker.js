@@ -93,10 +93,16 @@ function TouchTracker(element){
    }
    
    function detectAxis(){
+     var axisDiff = Math.abs(self.deltaY - self.deltaX);
+     console.log(axisDiff);
      if (Math.abs(self.deltaY) > Math.abs(self.deltaX)){
-       self.axis = "VERTICAL";
+       if (axisDiff > 5) {
+         self.axis = "VERTICAL";
+       }  
      } else {
-       self.axis = "HORIZONTAL";
+       if (axisDiff > 5) {
+         self.axis = "HORIZONTAL";
+       }  
      }
    }
 
