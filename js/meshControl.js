@@ -31,13 +31,25 @@ function MeshControl(meshes, rendererElement, options){
    
    function init(){
      $.extend(settings, options);
-     
+    
+    registerControls(); 
+   }
+   
+  function registerControls(){
      rendererElement.mousedown(onMouseDown);
      rendererElement.mouseup(onMouseUp);
      rendererElement.mousemove(onMouseMove);
      
      rendererElement[0].addEventListener('touchmove', onTouchMove, false);
-   }
+  }
+  
+  function unbindControls(){
+     rendererElement.off('mousedown', onMouseDown);
+     rendererElement.off('mouseup', onMouseUp);
+     rendererElement.off('mousemove', onMouseMove);
+     
+     rendererElement[0].removeEventListener('touchmove', onTouchMove);
+  }
    
   function onMouseMove(event) {
      updateMouseMoveDelta(event);
@@ -85,6 +97,9 @@ function MeshControl(meshes, rendererElement, options){
         mouseY = event.pageY;
         
    } 
+   
+   this.registerControls = registerControls;
+   this.unbindControls = unbindControls;
    
    return this;
 

@@ -9,6 +9,30 @@ function Viewer(textureArray, element, options){
     initialRotation: -90,
     sceneBackgroundColor: "rgb(100, 100, 100)"
   }
+  
+  // INTERNALS 
+  
+  var requestFrame = true;
+  var initialized = false;
+  
+  var scene, camera, renderer;
+  var meshes = [];
+  
+  var meshControl;
+  var cameraControl;
+  
+  var textures = [];
+  var textureManager;
+  
+  var rendererElement = element;
+  var canvasWidth = rendererElement.width();
+  var canvasHeight  = canvasWidth  / settings.aspectRatio;
+  var DEVICE_PIXEL_RATIO = window.devicePixelRatio ? window.devicePixelRatio : 1
+  
+  var CAM_FAR_PLANE = 1000;
+  var CAM_NEAR_PLANE = 0.1;
+  
+  var self = this;
 
   this.create = function(){
     $.extend(settings, options);
@@ -57,26 +81,6 @@ function Viewer(textureArray, element, options){
   
   this.create();
   
-  // INTERNALS 
-  
-  var initialized = false;
-  
-  var scene, camera, renderer;
-  var meshes = [];
-  var meshControl;
-  var cameraControl;
-  
-  var textures = [];
-  var textureManager;
-  
-  var rendererElement = element;
-  var canvasWidth = rendererElement.width();
-  var canvasHeight  = canvasWidth  / settings.aspectRatio;
-  var DEVICE_PIXEL_RATIO = window.devicePixelRatio ? window.devicePixelRatio : 1
-  
-  var CAM_FAR_PLANE = 1000;
-  var CAM_NEAR_PLANE = 0.1;
-  
   function loadScene(){
     // load scene json file created with three.js editor
     var sceneFile = settings.sceneFile;
@@ -85,7 +89,7 @@ function Viewer(textureArray, element, options){
     objloader.load(sceneFile,
       setup,
       function(xhr){
-        console.log("Scene " + sceneFile + " "+ Math.round(xhr.loaded / xhr.total * 100) + "%" );
+        console.log("Scene " + sceneFile );
       },
       function(xhr){
         console.log(xhr);
@@ -119,7 +123,7 @@ function Viewer(textureArray, element, options){
       if (initialized == false){
         setupMeshes();
         setupCamera();
-        render(); 
+        render();
       
         event = $.Event('viewer.loaded');  
         rendererElement.trigger(event);
@@ -146,7 +150,9 @@ function Viewer(textureArray, element, options){
       maxZoomDistance: settings.cameraXPosition,
       maxCameraHeight: meshes[1].geometry.boundingBox.size().y * .1 
     }
+    
     cameraControl = new CameraDollyControl(camera, rendererElement, cameraSettings);
+
   }
   
   function setupMeshes(){
@@ -177,10 +183,9 @@ function Viewer(textureArray, element, options){
   }
   
   function loadTexture(textureFile){
-    texturePath = textureFile;
     textureLoader = new THREE.TextureLoader(textureManager);
       
-    textureLoader.load(texturePath,
+    textureLoader.load(textureFile,
       function(texture){
         console.log("loader success");
         storeTexture(texture, textureFile);
@@ -218,10 +223,20 @@ function Viewer(textureArray, element, options){
   }
   
   function render(){
-    requestAnimationFrame(render);
-    
-    cameraControl.animate();
-    renderer.render(scene, camera);
+    if (requestFrame){
+      requestAnimationFrame(render);
+      cameraControl.animate();
+      renderer.render(scene, camera);
+    }
+  }
+  
+  function restartRender(){
+    requestFrame = true;
+    render();
+  }
+  
+  function haltRender(){
+    requestFrame = false;
   }
   
   function onMouseDown(event) {
@@ -234,6 +249,19 @@ function Viewer(textureArray, element, options){
      element.css("cursor", "-webkit-grab");
      element.css("cursor", "grab");
    }
+   
+  this.createControls = function(){
+    cameraControl.registerControls();
+    meshControl.registerControls();
+  }
+  
+  this.unbindControls = function(){
+    cameraControl.unbindControls();
+    meshControl.unbindControls();
+  }
+  
+  this.restart = restartRender;
+  this.halt = haltRender; 
   
   return this;
 

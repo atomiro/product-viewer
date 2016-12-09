@@ -69,6 +69,33 @@ function CameraDollyControl(camera, rendererElement, options){
     
   }
   
+  function initControls(){
+    rendererElement.dblclick(onDblClick);
+    
+    rendererElement.mousemove(onMouseMove);
+    rendererElement.mousedown(onMouseDown);
+    rendererElement.mouseup(onMouseUp);
+    rendererElement.hover(onHoverIn, onHoverOut);
+    
+    window.addEventListener('wheel', onMouseWheel);
+    
+    rendererElement[0].addEventListener('touchmove', onTouchMove, false);
+    rendererElement[0].addEventListener('touchend', onTouchEnd, false);
+  }
+  
+  function unbindControls(){
+    rendererElement.off('dblclick', onDblClick);
+    rendererElement.off('mousemove', onMouseMove);
+    rendererElement.off('mousedown', onMouseDown);
+    rendererElement.off('mouseup', onMouseUp);
+    rendererElement.off('hover', onHoverIn, onHoverOut);
+    
+    window.removeEventListener('wheel', onMouseWheel);
+    
+    rendererElement[0].removeEventListener('touchmove', onTouchMove);
+    rendererElement[0].removeEventListener('touchend', onTouchEnd);
+  }
+  
   function onDblClick(event){
     autoZoom();
   }
@@ -213,6 +240,9 @@ function CameraDollyControl(camera, rendererElement, options){
   this.animate = function(){
     animateZoom(settings.animationSpeed);
   }
+  
+  this.registerControls = initControls;
+  this.unbindControls = unbindControls;
   
   return this;
 

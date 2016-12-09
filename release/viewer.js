@@ -69,6 +69,33 @@ function CameraDollyControl(camera, rendererElement, options){
     
   }
   
+  function initControls(){
+    rendererElement.dblclick(onDblClick);
+    
+    rendererElement.mousemove(onMouseMove);
+    rendererElement.mousedown(onMouseDown);
+    rendererElement.mouseup(onMouseUp);
+    rendererElement.hover(onHoverIn, onHoverOut);
+    
+    window.addEventListener('wheel', onMouseWheel);
+    
+    rendererElement[0].addEventListener('touchmove', onTouchMove, false);
+    rendererElement[0].addEventListener('touchend', onTouchEnd, false);
+  }
+  
+  function unbindControls(){
+    rendererElement.off('dblclick', onDblClick);
+    rendererElement.off('mousemove', onMouseMove);
+    rendererElement.off('mousedown', onMouseDown);
+    rendererElement.off('mouseup', onMouseUp);
+    rendererElement.off('hover', onHoverIn, onHoverOut);
+    
+    window.removeEventListener('wheel', onMouseWheel);
+    
+    rendererElement[0].removeEventListener('touchmove', onTouchMove);
+    rendererElement[0].removeEventListener('touchend', onTouchEnd);
+  }
+  
   function onDblClick(event){
     autoZoom();
   }
@@ -214,6 +241,9 @@ function CameraDollyControl(camera, rendererElement, options){
     animateZoom(settings.animationSpeed);
   }
   
+  this.registerControls = initControls;
+  this.unbindControls = unbindControls;
+  
   return this;
 
 }
@@ -250,13 +280,25 @@ function CameraDollyControl(camera, rendererElement, options){
    
    function init(){
      $.extend(settings, options);
-     
+    
+    registerControls(); 
+   }
+   
+  function registerControls(){
      rendererElement.mousedown(onMouseDown);
      rendererElement.mouseup(onMouseUp);
      rendererElement.mousemove(onMouseMove);
      
      rendererElement[0].addEventListener('touchmove', onTouchMove, false);
-   }
+  }
+  
+  function unbindControls(){
+     rendererElement.off('mousedown', onMouseDown);
+     rendererElement.off('mouseup', onMouseUp);
+     rendererElement.off('mousemove', onMouseMove);
+     
+     rendererElement[0].removeEventListener('touchmove', onTouchMove);
+  }
    
   function onMouseMove(event) {
      updateMouseMoveDelta(event);
@@ -304,6 +346,9 @@ function CameraDollyControl(camera, rendererElement, options){
         mouseY = event.pageY;
         
    } 
+   
+   this.registerControls = registerControls;
+   this.unbindControls = unbindControls;
    
    return this;
 
@@ -439,7 +484,6 @@ function CameraDollyControl(camera, rendererElement, options){
 } ;function Viewer(textureArray, element, options){
 
   var settings = {
-    assetPath: "assets/",
     sceneFile: "models_scene.json",
     fov: 23,
     aspectRatio: 4/5,
@@ -448,6 +492,30 @@ function CameraDollyControl(camera, rendererElement, options){
     initialRotation: -90,
     sceneBackgroundColor: "rgb(100, 100, 100)"
   }
+  
+  // INTERNALS 
+  
+  var requestFrame = true;
+  var initialized = false;
+  
+  var scene, camera, renderer;
+  var meshes = [];
+  
+  var meshControl;
+  var cameraControl;
+  
+  var textures = [];
+  var textureManager;
+  
+  var rendererElement = element;
+  var canvasWidth = rendererElement.width();
+  var canvasHeight  = canvasWidth  / settings.aspectRatio;
+  var DEVICE_PIXEL_RATIO = window.devicePixelRatio ? window.devicePixelRatio : 1
+  
+  var CAM_FAR_PLANE = 1000;
+  var CAM_NEAR_PLANE = 0.1;
+  
+  var self = this;
 
   this.create = function(){
     $.extend(settings, options);
@@ -496,26 +564,6 @@ function CameraDollyControl(camera, rendererElement, options){
   
   this.create();
   
-  // INTERNALS 
-  
-  var initialized = false;
-  
-  var scene, camera, renderer;
-  var meshes = [];
-  var meshControl;
-  var cameraControl;
-  
-  var textures = [];
-  var textureManager;
-  
-  var rendererElement = element;
-  var canvasWidth = rendererElement.width();
-  var canvasHeight  = canvasWidth  / settings.aspectRatio;
-  var DEVICE_PIXEL_RATIO = window.devicePixelRatio ? window.devicePixelRatio : 1
-  
-  var CAM_FAR_PLANE = 1000;
-  var CAM_NEAR_PLANE = 0.1;
-  
   function loadScene(){
     // load scene json file created with three.js editor
     var sceneFile = settings.sceneFile;
@@ -524,7 +572,7 @@ function CameraDollyControl(camera, rendererElement, options){
     objloader.load(sceneFile,
       setup,
       function(xhr){
-        console.log("Scene " + sceneFile + " "+ Math.round(xhr.loaded / xhr.total * 100) + "%" );
+        console.log("Scene " + sceneFile );
       },
       function(xhr){
         console.log(xhr);
@@ -558,7 +606,7 @@ function CameraDollyControl(camera, rendererElement, options){
       if (initialized == false){
         setupMeshes();
         setupCamera();
-        render(); 
+        render();
       
         event = $.Event('viewer.loaded');  
         rendererElement.trigger(event);
@@ -585,7 +633,9 @@ function CameraDollyControl(camera, rendererElement, options){
       maxZoomDistance: settings.cameraXPosition,
       maxCameraHeight: meshes[1].geometry.boundingBox.size().y * .1 
     }
+    
     cameraControl = new CameraDollyControl(camera, rendererElement, cameraSettings);
+
   }
   
   function setupMeshes(){
@@ -616,10 +666,9 @@ function CameraDollyControl(camera, rendererElement, options){
   }
   
   function loadTexture(textureFile){
-    texturePath = textureFile;
     textureLoader = new THREE.TextureLoader(textureManager);
       
-    textureLoader.load(texturePath,
+    textureLoader.load(textureFile,
       function(texture){
         console.log("loader success");
         storeTexture(texture, textureFile);
@@ -657,10 +706,20 @@ function CameraDollyControl(camera, rendererElement, options){
   }
   
   function render(){
-    requestAnimationFrame(render);
-    
-    cameraControl.animate();
-    renderer.render(scene, camera);
+    if (requestFrame){
+      requestAnimationFrame(render);
+      cameraControl.animate();
+      renderer.render(scene, camera);
+    }
+  }
+  
+  function restartRender(){
+    requestFrame = true;
+    render();
+  }
+  
+  function haltRender(){
+    requestFrame = false;
   }
   
   function onMouseDown(event) {
@@ -673,6 +732,19 @@ function CameraDollyControl(camera, rendererElement, options){
      element.css("cursor", "-webkit-grab");
      element.css("cursor", "grab");
    }
+   
+  this.createControls = function(){
+    cameraControl.registerControls();
+    meshControl.registerControls();
+  }
+  
+  this.unbindControls = function(){
+    cameraControl.unbindControls();
+    meshControl.unbindControls();
+  }
+  
+  this.restart = restartRender;
+  this.halt = haltRender; 
   
   return this;
 
