@@ -22,7 +22,7 @@
     
       var settings = { 
         sceneBackgroundColor: "rgb(0, 0, 0)",
-        sceneFile: "assets/scene_lights_adjusted.json"
+        sceneFile: "assets/scene_DarkDesign.json"
       }
       var viewerDiv = $('.preview');
       viewer = new Viewer(['assets/Azalea-V1S13-01.jpg', 'assets/Bismuth-V1S12-Grey-01.jpg'], viewerDiv, settings);
@@ -38,7 +38,9 @@
       
       $('.show-texture').click( function(){
         textureFile = $(this).data('texture');
+        lighting = $(this).data('lighting');
         viewer.switchTexture(textureFile);
+        viewer.changeLighting(lighting);
       });
       
       $('.render-control').click( function(){
@@ -98,8 +100,12 @@
 
   <div class="controls">
    <button class="switch">Switch Model</button>
-   <button class="show-texture" data-texture="assets/Azalea-V1S13-01.jpg">Azalea</button>
-   <button class="show-texture" data-texture="assets/Bismuth-V1S12-Grey-01.jpg">Bismuth</button>
+   <button class="show-texture" 
+     data-texture="assets/Azalea-V1S13-01.jpg" 
+     data-lighting ="light">Azalea</button>
+   <button class="show-texture" 
+     data-texture="assets/Bismuth-V1S12-Grey-01.jpg" 
+     data-lighting="dark">Bismuth</button>
    <button class="render-control">Stop</button>
    
    <h3>Controls</h3>

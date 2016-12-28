@@ -483,6 +483,22 @@ function CameraDollyControl(camera, rendererElement, options){
 
 } ;function Viewer(textureArray, element, options){
 
+  var lightingConfigLight = {
+      "key": 0.5,
+      "rim_right":  0.6,
+      "rim_left":  0.6,
+      "fill":  0.4,
+      "ambient": 0.6
+   }
+   
+   var lightingConfigDark = {
+      "key":  0.7,
+      "rim_right":  0.8,
+      "rim_left":  1.00,
+      "fill":  0.3,
+      "ambient": 0.3
+   }
+
   var settings = {
     sceneFile: "models_scene.json",
     fov: 23,
@@ -490,7 +506,7 @@ function CameraDollyControl(camera, rendererElement, options){
     cameraXPosition: -35,
     cameraYPosition: 8.5,
     initialRotation: -90,
-    sceneBackgroundColor: "rgb(100, 100, 100)"
+    sceneBackgroundColor: "rgb(100, 100, 100)",
   }
   
   // INTERNALS 
@@ -500,6 +516,7 @@ function CameraDollyControl(camera, rendererElement, options){
   
   var scene, camera, renderer;
   var meshes = [];
+  var lights = {};
   
   var meshControl;
   var cameraControl;
@@ -606,6 +623,7 @@ function CameraDollyControl(camera, rendererElement, options){
       if (initialized == false){
         setupMeshes();
         setupCamera();
+        setupLighting(lightingConfigLight);
         render();
       
         event = $.Event('viewer.loaded');  
@@ -653,6 +671,37 @@ function CameraDollyControl(camera, rendererElement, options){
     meshes[0].visible = true;
       
     meshControl = new MeshControl(meshes, rendererElement);
+  }
+  
+  function setupLighting(config){
+    lights = {
+      "key": scene.getObjectByName("LKEY"),
+      "rim_right": scene.getObjectByName("LRIM_Right"),
+      "rim_left": scene.getObjectByName("LRIM_Left"),
+      "fill": scene.getObjectByName("LFILL"),
+      "ambient": scene.getObjectByName("LAmbient")
+    }  
+    
+    lights.key.intensity = config.key;
+    lights.rim_right.intensity = config.rim_right; 
+    lights.rim_left.intensity = config.rim_left;
+    lights.fill.intensity =  config.fill;
+    lights.ambient.intensity = config.ambient;
+  }
+  
+  function changeLighting(style){
+    //light or dark style 
+    if (style.toLowerCase() == "light") {
+      config = lightingConfigLight;
+    } else if (style.toLowerCase() == "dark"){
+      config = lightingConfigDark;
+    }
+    
+    lights.key.intensity = config.key;
+    lights.rim_right.intensity = config.rim_right; 
+    lights.rim_left.intensity = config.rim_left;
+    lights.fill.intensity =  config.fill;
+    lights.ambient.intensity = config.ambient;
   }
   
   function getTextureByName(name){
@@ -745,6 +794,7 @@ function CameraDollyControl(camera, rendererElement, options){
   
   this.restart = restartRender;
   this.halt = haltRender; 
+  this.changeLighting = changeLighting;
   
   return this;
 
