@@ -21,9 +21,9 @@ function Viewer(textureArray, element, options){
     fov: 23,
     aspectRatio: 4/5,
     cameraXPosition: -35,
-    cameraYPosition: 8.5,
+    cameraYPosition: 11.5,
     initialRotation: -90,
-    sceneBackgroundColor: "rgb(100, 100, 100)",
+    sceneBackgroundColor: "transparent"
   }
   
   // INTERNALS 
@@ -50,53 +50,6 @@ function Viewer(textureArray, element, options){
   var CAM_NEAR_PLANE = 0.1;
   
   var self = this;
-
-  this.create = function(){
-    $.extend(settings, options);
-    loadScene();
-    
-    $(window).resize(function(){ 
-      debounceResize(element);
-    });
-    
-    element.mousedown(onMouseDown);
-    element.mouseup(onMouseUp);
-    
-    element.css("cursor", "-webkit-grab");
-    element.css("cursor", "grab");
-  }
-  
-  this.toggleModels = function() {
-    var plusModel = meshes[1];
-    var straightModel = meshes[0];
-    
-    if (straightModel.visible == true) {
-      plusModel.visible = true;
-      straightModel.visible = false;
-    } else {
-      straightModel.visible = true;
-      plusModel.visible = false;
-    }
-    
-    event = $.Event('viewer.togglemodel');  
-    rendererElement.trigger(event);
-  }
-  
-  this.switchTexture = function(name) {
-    for (var i = 0; i < scene.children.length; i++){
-      object = scene.children[i];
-      if (object.type == "Mesh"){
-        updateTexture(getTextureByName(name), object);
-      }
-    }
-    
-    event = $.Event('viewer.switchtexture');  
-    rendererElement.trigger(event);
-  }
-  
-  this.addTexture = loadTexture;
-  
-  this.create();
   
   function loadScene(){
     // load scene json file created with three.js editor
@@ -115,14 +68,23 @@ function Viewer(textureArray, element, options){
   }
   
   function setup(sceneFile){
-    renderer = new THREE.WebGLRenderer({ antialias:true });
+    renderer = new THREE.WebGLRenderer({ alpha: true, antialias: true });
     renderer.setPixelRatio(DEVICE_PIXEL_RATIO); 
     renderer.setSize(canvasWidth, canvasHeight);
-    
     rendererElement.append(renderer.domElement);
     
-    scene = sceneFile;
-    scene.background = new THREE.Color(settings.sceneBackgroundColor);
+    if (settings.sceneBackgroundColor == "transparent"){
+      renderer.setClearColor(0x000000, 0); 
+    } else {
+      var bgcolor = new THREE.Color(settings.sceneBackgroundColor);
+      if (bgcolor) {  
+        sceneFile.background = bgcolor;
+      } else {
+        sceneFile.background = new THREE.Color(0x000000);
+      } 
+    }
+      
+    scene = sceneFile;  
     
     textureManager = new THREE.LoadingManager();
     
@@ -140,7 +102,7 @@ function Viewer(textureArray, element, options){
       if (initialized == false){
         setupMeshes();
         setupCamera();
-        setupLighting(lightingConfigLight);
+        setupLighting(lightingConfigDark);
         render();
       
         event = $.Event('viewer.loaded');  
@@ -160,13 +122,13 @@ function Viewer(textureArray, element, options){
     camera = new THREE.PerspectiveCamera(settings.fov, settings.aspectRatio, CAM_NEAR_PLANE, CAM_FAR_PLANE);
     camera.position.x = settings.cameraXPosition;
     
-    var center = meshes[1].geometry.boundingBox.center().y * .12;
+    var center = meshes[1].geometry.boundingBox.center().y * .13;
     camera.position.y = center;
     camera.lookAt(new THREE.Vector3(0, center, 0));
     
     var cameraSettings = {
       maxZoomDistance: settings.cameraXPosition,
-      maxCameraHeight: meshes[1].geometry.boundingBox.size().y * .1 
+      maxCameraHeight: meshes[1].geometry.boundingBox.size().y * .115 
     }
     
     cameraControl = new CameraDollyControl(camera, rendererElement, cameraSettings);
@@ -229,6 +191,16 @@ function Viewer(textureArray, element, options){
     }
     
     return texture;
+  }
+  
+  function getMeshByName(name){
+    var mesh;
+    
+    for (var i = 0; i < meshes.length; i++){
+      if (meshes[i].name == name) { mesh = meshes[i]; }
+    }
+    
+    return mesh;
   }
   
   function loadTexture(textureFile){
@@ -299,6 +271,66 @@ function Viewer(textureArray, element, options){
      element.css("cursor", "grab");
    }
    
+  this.create = function(){
+    $.extend(settings, options);
+    loadScene();
+    
+    $(window).resize(function(){ 
+      debounceResize(element);
+    });
+    
+    element.mousedown(onMouseDown);
+    element.mouseup(onMouseUp);
+    
+    element.css("cursor", "-webkit-grab");
+    element.css("cursor", "grab");
+  }
+  
+  this.toggleModels = function() {
+    var plusModel = getMeshByName("artemix3XLMesh.js");
+    var straightModel = getMeshByName("artemixXSMesh.js");
+    
+    if (straightModel.visible == true) {
+      plusModel.visible = true;
+      straightModel.visible = false;
+    } else {
+      straightModel.visible = true;
+      plusModel.visible = false;
+    }
+    
+    event = $.Event('viewer.togglemodel');  
+    rendererElement.trigger(event);
+  }
+  
+  this.switchTexture = function(name) {
+    for (var i = 0; i < scene.children.length; i++){
+      object = scene.children[i];
+      if (object.type == "Mesh"){
+        updateTexture(getTextureByName(name), object);
+      }
+    }
+    
+    event = $.Event('viewer.switchtexture');  
+    rendererElement.trigger(event);
+  }
+  
+  this.displayModel = function(size){
+    //use size names "XS" or "3XL"
+    var plusModel = getMeshByName("artemix3XLMesh.js");
+    var straightModel = getMeshByName("artemixXSMesh.js");
+    
+    if (size == "XS"){
+      straightModel.visible = true;
+      plusModel.visible = false;
+    } else if (size == "3XL"){
+      plusModel.visible = true;
+      straightModel.visible = false;
+    }
+    
+    event = $.Event('viewer.togglemodel');  
+    rendererElement.trigger(event);
+  }
+   
   this.createControls = function(){
     cameraControl.registerControls();
     meshControl.registerControls();
@@ -309,9 +341,12 @@ function Viewer(textureArray, element, options){
     meshControl.unbindControls();
   }
   
+  this.addTexture = loadTexture;
   this.restart = restartRender;
   this.halt = haltRender; 
   this.changeLighting = changeLighting;
+  
+  this.create();
   
   return this;
 
