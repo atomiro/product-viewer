@@ -271,6 +271,11 @@ function Viewer(textureArray, element, options){
      element.css("cursor", "grab");
    }
    
+   function onMouseOut(event){
+     element.css("cursor", "-webkit-grab");
+     element.css("cursor", "grab");
+   }
+   
   this.create = function(){
     $.extend(settings, options);
     loadScene();
@@ -281,6 +286,7 @@ function Viewer(textureArray, element, options){
     
     element.mousedown(onMouseDown);
     element.mouseup(onMouseUp);
+    element.mouseleave(onMouseOut);
     
     element.css("cursor", "-webkit-grab");
     element.css("cursor", "grab");

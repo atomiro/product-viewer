@@ -53,19 +53,17 @@ function TouchTracker(element){
    }
    
    function onTouchMove(event){
-     event.preventDefault();
-     if (event.touches.length == 1){
-        getTouchMoveDelta(event);
-        detectAxis();
-        self.speedX = self.deltaX / (event.timeStamp - lastTouchTime);
-        self.speedY = self.deltaY / (event.timeStamp - lastTouchTime);
-        
-        lastTouchTime = event.timeStamp;
-     } else if (event.touches.length == 2) {
-        currentDistance = touchDistance(event);
-        self.deltaDistance = currentDistance - lastDistance;
-        lastDistance = currentDistance;
-     }
+       if (event.touches.length == 1){
+           getTouchMoveDelta(event);
+           detectAxis();
+           self.speedX = self.deltaX / (event.timeStamp - lastTouchTime);
+           self.speedY = self.deltaY / (event.timeStamp - lastTouchTime);
+           lastTouchTime = event.timeStamp;
+       } else if (event.touches.length == 2) {
+         currentDistance = touchDistance(event);
+         self.deltaDistance = currentDistance - lastDistance;
+         lastDistance = currentDistance;
+       }
    }
    
    function onTouchEnd(event){
@@ -96,16 +94,15 @@ function TouchTracker(element){
      var axisDiff = Math.abs(self.deltaY - self.deltaX);
      console.log(axisDiff);
      if (Math.abs(self.deltaY) > Math.abs(self.deltaX)){
-       if (axisDiff > 5) {
+       if (axisDiff > 2) {
          self.axis = "VERTICAL";
        }  
      } else {
-       if (axisDiff > 5) {
+       if (axisDiff > 2) {
          self.axis = "HORIZONTAL";
        }  
      }
    }
-
   
    this.getDeltas = function(event){
      getTouchMoveDelta(event);

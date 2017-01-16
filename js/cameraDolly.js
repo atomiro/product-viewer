@@ -156,15 +156,16 @@ function CameraDollyControl(camera, rendererElement, options){
   } 
    
    function onTouchMove(event){
-     event.preventDefault();
      if (event.touches.length == 1){
         if (Math.abs(cameraDist) < self.panLockAt) {
+          event.preventDefault();
           if (touchTracker.axis == "VERTICAL"){ 
             pan(touchTracker.speedY, settings.touchPanSpeedFactor);
-          } 
-        }
+          }
+        }   
      }
      else if (event.touches.length == 2){
+        event.preventDefault();
         isAnimating = false;
         interactiveZoom(touchTracker.deltaDistance, settings.interactiveZoomSpeedFactor);
      }

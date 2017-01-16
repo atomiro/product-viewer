@@ -20,6 +20,7 @@ function MeshControl(meshes, rendererElement, options){
    var mouseDeltaY = 0;
    
    var mouseDown = false;
+   var mouseIn = false;
    var touchStartTime;
    var lastTimeStamp;
       
@@ -39,6 +40,8 @@ function MeshControl(meshes, rendererElement, options){
      rendererElement.mousedown(onMouseDown);
      rendererElement.mouseup(onMouseUp);
      rendererElement.mousemove(onMouseMove);
+     rendererElement.mouseenter(onMouseIn);
+     rendererElement.mouseleave(onMouseOut);
      
      rendererElement[0].addEventListener('touchmove', onTouchMove, false);
   }
@@ -68,10 +71,19 @@ function MeshControl(meshes, rendererElement, options){
      mouseDown = false;
    }
    
+   function onMouseIn(event) {
+      mouseIn = true;
+   }
+   
+   function onMouseOut(event){
+     mouseIn = false;
+     mouseDown = false;
+   }
+   
    function onTouchMove(event){
-     event.preventDefault();
      if (event.touches.length == 1){
        if (touchTracker.axis == "HORIZONTAL"){
+          event.preventDefault();
           var angle = (touchTracker.speedX * Math.PI / 180) * settings.touchSpeedFactor;
           rotateTo(angle); 
         }
@@ -88,7 +100,7 @@ function MeshControl(meshes, rendererElement, options){
         mouseDeltaX = 0;
         mouseDeltaY = 0;
         
-        if (mouseDown) {
+        if (mouseIn && mouseDown) {
           mouseDeltaX = mouseX - event.pageX;
           mouseDeltaY = mouseY - event.pageY;
         }

@@ -156,15 +156,16 @@ function CameraDollyControl(camera, rendererElement, options){
   } 
    
    function onTouchMove(event){
-     event.preventDefault();
      if (event.touches.length == 1){
         if (Math.abs(cameraDist) < self.panLockAt) {
+          event.preventDefault();
           if (touchTracker.axis == "VERTICAL"){ 
             pan(touchTracker.speedY, settings.touchPanSpeedFactor);
-          } 
-        }
+          }
+        }   
      }
      else if (event.touches.length == 2){
+        event.preventDefault();
         isAnimating = false;
         interactiveZoom(touchTracker.deltaDistance, settings.interactiveZoomSpeedFactor);
      }
@@ -269,6 +270,7 @@ function CameraDollyControl(camera, rendererElement, options){
    var mouseDeltaY = 0;
    
    var mouseDown = false;
+   var mouseIn = false;
    var touchStartTime;
    var lastTimeStamp;
       
@@ -288,6 +290,8 @@ function CameraDollyControl(camera, rendererElement, options){
      rendererElement.mousedown(onMouseDown);
      rendererElement.mouseup(onMouseUp);
      rendererElement.mousemove(onMouseMove);
+     rendererElement.mouseenter(onMouseIn);
+     rendererElement.mouseleave(onMouseOut);
      
      rendererElement[0].addEventListener('touchmove', onTouchMove, false);
   }
@@ -317,10 +321,19 @@ function CameraDollyControl(camera, rendererElement, options){
      mouseDown = false;
    }
    
+   function onMouseIn(event) {
+      mouseIn = true;
+   }
+   
+   function onMouseOut(event){
+     mouseIn = false;
+     mouseDown = false;
+   }
+   
    function onTouchMove(event){
-     event.preventDefault();
      if (event.touches.length == 1){
        if (touchTracker.axis == "HORIZONTAL"){
+          event.preventDefault();
           var angle = (touchTracker.speedX * Math.PI / 180) * settings.touchSpeedFactor;
           rotateTo(angle); 
         }
@@ -337,7 +350,7 @@ function CameraDollyControl(camera, rendererElement, options){
         mouseDeltaX = 0;
         mouseDeltaY = 0;
         
-        if (mouseDown) {
+        if (mouseIn && mouseDown) {
           mouseDeltaX = mouseX - event.pageX;
           mouseDeltaY = mouseY - event.pageY;
         }
@@ -407,19 +420,17 @@ function CameraDollyControl(camera, rendererElement, options){
    }
    
    function onTouchMove(event){
-     event.preventDefault();
-     if (event.touches.length == 1){
-        getTouchMoveDelta(event);
-        detectAxis();
-        self.speedX = self.deltaX / (event.timeStamp - lastTouchTime);
-        self.speedY = self.deltaY / (event.timeStamp - lastTouchTime);
-        
-        lastTouchTime = event.timeStamp;
-     } else if (event.touches.length == 2) {
-        currentDistance = touchDistance(event);
-        self.deltaDistance = currentDistance - lastDistance;
-        lastDistance = currentDistance;
-     }
+       if (event.touches.length == 1){
+           getTouchMoveDelta(event);
+           detectAxis();
+           self.speedX = self.deltaX / (event.timeStamp - lastTouchTime);
+           self.speedY = self.deltaY / (event.timeStamp - lastTouchTime);
+           lastTouchTime = event.timeStamp;
+       } else if (event.touches.length == 2) {
+         currentDistance = touchDistance(event);
+         self.deltaDistance = currentDistance - lastDistance;
+         lastDistance = currentDistance;
+       }
    }
    
    function onTouchEnd(event){
@@ -450,16 +461,15 @@ function CameraDollyControl(camera, rendererElement, options){
      var axisDiff = Math.abs(self.deltaY - self.deltaX);
      console.log(axisDiff);
      if (Math.abs(self.deltaY) > Math.abs(self.deltaX)){
-       if (axisDiff > 5) {
+       if (axisDiff > 2) {
          self.axis = "VERTICAL";
        }  
      } else {
-       if (axisDiff > 5) {
+       if (axisDiff > 2) {
          self.axis = "HORIZONTAL";
        }  
      }
    }
-
   
    this.getDeltas = function(event){
      getTouchMoveDelta(event);
@@ -754,6 +764,11 @@ function CameraDollyControl(camera, rendererElement, options){
      element.css("cursor", "grab");
    }
    
+   function onMouseOut(event){
+     element.css("cursor", "-webkit-grab");
+     element.css("cursor", "grab");
+   }
+   
   this.create = function(){
     $.extend(settings, options);
     loadScene();
@@ -764,6 +779,7 @@ function CameraDollyControl(camera, rendererElement, options){
     
     element.mousedown(onMouseDown);
     element.mouseup(onMouseUp);
+    element.mouseleave(onMouseOut);
     
     element.css("cursor", "-webkit-grab");
     element.css("cursor", "grab");
