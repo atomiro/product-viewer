@@ -602,6 +602,20 @@ function CameraDollyControl(camera, rendererElement, options){
         rendererElement.trigger(event);
       
         initialized = true;
+        
+        try {
+          event = $.Event('viewer.loaded');  
+          rendererElement.trigger(event);
+        } catch (e) {  
+          console.warn("Modern Event API not supported", e);
+      
+          var event = document.createEvent('Event');
+          event.initEvent('viewer.loaded', true, true);
+    
+          var elementClass =  rendererElement.attr('class')
+          eventElement = document.getElementsByClassName(elementClass)[0];
+          eventElement.dispatchEvent(event);
+        }
       }
     }
     
@@ -682,7 +696,6 @@ function CameraDollyControl(camera, rendererElement, options){
     for (var i = 0; i < textures.length; i++){
       if (textures[i].name == name) { texture = textures[i]; }
     }
-    
     return texture;
   }
   
@@ -797,8 +810,19 @@ function CameraDollyControl(camera, rendererElement, options){
       plusModel.visible = false;
     }
     
-    event = $.Event('viewer.togglemodel');  
-    rendererElement.trigger(event);
+    try {
+      event = $.Event('viewer.togglemodel');  
+      rendererElement.trigger(event);
+    } catch (e) {  
+      console.warn("Modern Event API not supported", e);
+      
+      var event = document.createEvent('Event');
+      event.initEvent('viewer.togglemodel', true, true);
+    
+      var elementClass =  rendererElement.attr('class')
+      eventElement = document.getElementsByClassName(elementClass)[0];
+      eventElement.dispatchEvent(event);
+    }
   }
   
   this.switchTexture = function(name) {
@@ -809,8 +833,19 @@ function CameraDollyControl(camera, rendererElement, options){
       }
     }
     
-    event = $.Event('viewer.switchtexture');  
-    rendererElement.trigger(event);
+    try {
+      event = $.Event('viewer.switchtexture');  
+      rendererElement.trigger(event);
+    } catch (e) {  
+      console.warn("Modern Event API not supported", e);
+      
+      var event = document.createEvent('Event');
+      event.initEvent('viewer.switchtexture', true, true);
+    
+      var elementClass =  rendererElement.attr('class')
+      eventElement = document.getElementsByClassName(elementClass)[0];
+      eventElement.dispatchEvent(event);
+    }
   }
   
   this.displayModel = function(size){
@@ -826,8 +861,19 @@ function CameraDollyControl(camera, rendererElement, options){
       straightModel.visible = false;
     }
     
-    event = $.Event('viewer.togglemodel');  
-    rendererElement.trigger(event);
+    try {
+      event = $.Event('viewer.togglemodel');  
+      rendererElement.trigger(event);
+    } catch (e) {  
+      console.warn("Modern Event API not supported", e);
+      
+      var event = document.createEvent('Event');
+      event.initEvent('viewer.togglemodel', true, true);
+    
+      var elementClass =  rendererElement.attr('class')
+      eventElement = document.getElementsByClassName(elementClass)[0];
+      eventElement.dispatchEvent(event);
+    }
   }
    
   this.createControls = function(){
