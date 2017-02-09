@@ -46,7 +46,7 @@ function Viewer(textureArray, element, options){
   var canvasHeight  = canvasWidth  / settings.aspectRatio;
   var DEVICE_PIXEL_RATIO = window.devicePixelRatio ? window.devicePixelRatio : 1
   
-  var CAM_FAR_PLANE = 1000;
+  var CAM_FAR_PLANE = 500;
   var CAM_NEAR_PLANE = 0.1;
   
   var self = this;
@@ -94,8 +94,8 @@ function Viewer(textureArray, element, options){
     }
     
     textureManager.onProgress = function(event) {
-      console.log("manager progress");
-      console.log(event);
+      //console.log("manager progress");
+      //console.log(event);
     }
     
     textureManager.onLoad = function(event){
@@ -104,25 +104,10 @@ function Viewer(textureArray, element, options){
         setupCamera();
         setupLighting(lightingConfigDark);
         render();
-      
-        event = $.Event('viewer.loaded');  
-        rendererElement.trigger(event);
+        
+        triggerEvent('viewer.loaded');
       
         initialized = true;
-        
-        try {
-          event = $.Event('viewer.loaded');  
-          rendererElement.trigger(event);
-        } catch (e) {  
-          console.warn("Modern Event API not supported", e);
-      
-          var event = document.createEvent('Event');
-          event.initEvent('viewer.loaded', true, true);
-    
-          var elementClass =  rendererElement.attr('class')
-          eventElement = document.getElementsByClassName(elementClass)[0];
-          eventElement.dispatchEvent(event);
-        }
       }
     }
     
@@ -225,7 +210,7 @@ function Viewer(textureArray, element, options){
         storeTexture(texture, textureFile);
       },
       function(xhr){
-         console.log("Texture " + textureFile + " " + Math.round(xhr.loaded / xhr.total * 100) + "%" );
+        // console.log("Texture " + textureFile + " " + Math.round(xhr.loaded / xhr.total * 100) + "%" );
       },
       function(xhr){
         console.log("loader error");
@@ -287,7 +272,24 @@ function Viewer(textureArray, element, options){
    function onMouseOut(event){
      element.css("cursor", "-webkit-grab");
      element.css("cursor", "grab");
-   }
+   } 
+  
+  function triggerEvent(eventName){
+    console.log(eventName);
+    try {
+      event = $.Event(eventName);  
+      rendererElement.trigger(event);
+    } catch (e) {  
+      console.warn("Modern Event API not supported", e);
+      
+      var event = document.createEvent('Event');
+      event.initEvent(eventName, true, true);
+    
+      var elementClass =  rendererElement.attr('class')
+      eventElement = document.getElementsByClassName(elementClass)[0];
+      eventElement.dispatchEvent(event);
+    }
+  }
    
   this.create = function(){
     $.extend(settings, options);
@@ -317,19 +319,8 @@ function Viewer(textureArray, element, options){
       plusModel.visible = false;
     }
     
-    try {
-      event = $.Event('viewer.togglemodel');  
-      rendererElement.trigger(event);
-    } catch (e) {  
-      console.warn("Modern Event API not supported", e);
-      
-      var event = document.createEvent('Event');
-      event.initEvent('viewer.togglemodel', true, true);
+    triggerEvent('viewer.togglemodel');
     
-      var elementClass =  rendererElement.attr('class')
-      eventElement = document.getElementsByClassName(elementClass)[0];
-      eventElement.dispatchEvent(event);
-    }
   }
   
   this.switchTexture = function(name) {
@@ -340,19 +331,7 @@ function Viewer(textureArray, element, options){
       }
     }
     
-    try {
-      event = $.Event('viewer.switchtexture');  
-      rendererElement.trigger(event);
-    } catch (e) {  
-      console.warn("Modern Event API not supported", e);
-      
-      var event = document.createEvent('Event');
-      event.initEvent('viewer.switchtexture', true, true);
-    
-      var elementClass =  rendererElement.attr('class')
-      eventElement = document.getElementsByClassName(elementClass)[0];
-      eventElement.dispatchEvent(event);
-    }
+    triggerEvent('viewer.switchtexture');
   }
   
   this.displayModel = function(size){
@@ -368,19 +347,7 @@ function Viewer(textureArray, element, options){
       straightModel.visible = false;
     }
     
-    try {
-      event = $.Event('viewer.togglemodel');  
-      rendererElement.trigger(event);
-    } catch (e) {  
-      console.warn("Modern Event API not supported", e);
-      
-      var event = document.createEvent('Event');
-      event.initEvent('viewer.togglemodel', true, true);
-    
-      var elementClass =  rendererElement.attr('class')
-      eventElement = document.getElementsByClassName(elementClass)[0];
-      eventElement.dispatchEvent(event);
-    }
+    triggerEvent('viewer.togglemodel');
   }
    
   this.createControls = function(){
