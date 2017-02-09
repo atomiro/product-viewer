@@ -4,27 +4,32 @@
 <head> 
     <meta name="robots" content="noindex" />
     <meta charset="UTF-8"/>
+      <meta content="user-scalable=yes, width=device-width, initial-scale=1.0, maximum-scale=4" name="viewport"/>
     <title>simple threejs design preview</title>
     <link href="highlight/prism.css" rel="stylesheet" type="text/css"/>
     <link href="assets/basic.css" rel="stylesheet" type="text/css"/>
     <script src="https://code.jquery.com/jquery-3.1.0.min.js" integrity="sha256-cCueBR6CsyA4/9szpPfrX3s49M9vUU5BgtiJj06wt/s=" crossorigin="anonymous"></script>
     <script src="https://cdn.jsdelivr.net/lodash/4.16.4/lodash.min.js"></script>
     <script src="assets/vendor/three.js"></script>
-    <script src="assets/vendor/SubdivisionModifier.js"></script>
     <script src="release/viewer.min.js"></script>
     <script type="text/javascript">
     
+    var viewer;
+    
     $(document).ready( function(){
     
+      var isRendering = false;
+    
       var settings = { 
-        sceneBackgroundColor: "rgb(0, 0, 0)",
-        sceneFile: "scene_opt.json" 
+        sceneFile: "assets/scene_DarkDesign.json",
+        sceneBackgroundColor: "rgb(100, 5, 86)"
       }
       var viewerDiv = $('.preview');
-      var viewer = new Viewer(['Butterflies-V1S13b.png', 'FireTights-V1S13b.png'], viewerDiv, settings);
+      viewer = new Viewer(['assets/Azalea-V1S13-01.jpg', 'assets/Bismuth-V1S12-Grey-01.jpg'], viewerDiv, settings);
       
       viewerDiv.on('viewer.loaded', function(){ 
         $(this).addClass("show-viewer"); 
+        isRendering = true;
       });
       
       $('.switch').click( function(){
@@ -33,8 +38,23 @@
       
       $('.show-texture').click( function(){
         textureFile = $(this).data('texture');
+        lighting = $(this).data('lighting');
         viewer.switchTexture(textureFile);
+        viewer.changeLighting(lighting);
       });
+      
+      $('.render-control').click( function(){
+        if (isRendering) {
+          viewer.halt();
+          isRendering = false;
+          $(this).text("Start");
+        } else {
+          viewer.restart();
+          isRendering = true;
+          $(this).text("Stop");
+        }
+      });
+      
     });
     </script>
     
@@ -48,6 +68,10 @@
         -moz-transition: opacity .3s ease-in-out;
         -o-transition: opacity .3s ease-in-out;
         transition: opacity .3s ease-in-out;
+        
+        -webkit-user-select: none;
+        user-select: none;
+        -webkit-tap-highlight-color: rgba(0,0,0,0);
 	  }
 	  
 	  canvas {
@@ -57,6 +81,13 @@
 	   
 	   .show-viewer {
 	     opacity: 1;
+	   }
+	   
+	   @media screen and (max-width: 530px){
+	     .preview { 
+	       height: 100%;
+	       width: 100%;
+	      }
 	   }
     </style>
 </head>
@@ -69,8 +100,13 @@
 
   <div class="controls">
    <button class="switch">Switch Model</button>
-   <button class="show-texture" data-texture="Butterflies-V1S13b.png">Butterflies</button>
-   <button class="show-texture" data-texture="FireTights-V1S13b.png">Fire</button>
+   <button class="show-texture" 
+     data-texture="assets/Azalea-V1S13-01.jpg" 
+     data-lighting ="light">Azalea</button>
+   <button class="show-texture" 
+     data-texture="assets/Bismuth-V1S12-Grey-01.jpg" 
+     data-lighting="dark">Bismuth</button>
+   <button class="render-control">Stop</button>
    
    <h3>Controls</h3>
    <p>
