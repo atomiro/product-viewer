@@ -1,4 +1,4 @@
-function Viewer(textureArray, element, options){
+function Viewer(initTexture, element, options){
 
   var lightingConfigLight = {
       "key": 0.5,
@@ -86,6 +86,12 @@ function Viewer(textureArray, element, options){
       
     scene = sceneFile;  
     
+    initManager = new THREE.LoadingManager();
+    
+    initManager.onLoad = function(event){
+      initScene();
+    }
+    
     textureManager = new THREE.LoadingManager();
     
     textureManager.onError = function(event) {
@@ -99,7 +105,15 @@ function Viewer(textureArray, element, options){
     }
     
     textureManager.onLoad = function(event){
-      if (initialized == false){
+       //initScene();
+    }
+    
+    loadTexture(initTexture, initManager);
+ 
+  }
+  
+  function initScene(){
+    if (initialized == false){
         setupMeshes();
         setupCamera();
         setupLighting(lightingConfigDark);
@@ -109,12 +123,6 @@ function Viewer(textureArray, element, options){
       
         initialized = true;
       }
-    }
-    
-    for (var i =0; i < textureArray.length; i++){
-      loadTexture(textureArray[i]);
-    }
- 
   }
   
   function setupCamera(){
@@ -141,11 +149,6 @@ function Viewer(textureArray, element, options){
           object.rotation.y = settings.initialRotation * Math.PI / 180;
           meshes.push(object);
           var smoothGeometry = object.geometry.clone();
-          subdivider.modify(smoothGeometry);
-          object.geometry = smoothGeometry;
-          object.geometry.verticesNeedUpdate = true;
-          object.geometry.uvsNeedUpdate = true;
-          object.geometry.elementsNeedUpdate = true;
           object.material.map = textures[0];
           object.geometry.computeBoundingBox();
         }
@@ -207,16 +210,20 @@ function Viewer(textureArray, element, options){
     return mesh;
   }
   
-  function loadTexture(textureFile){
-    textureLoader = new THREE.TextureLoader(textureManager);
-      
-    textureLoader.load(textureFile,
+  function loadTextures(textureFileArray){
+    for (var i = 0 ; i < textureFileArray.length; i++){
+        loadTexture(textureFileArray[i], textureManager);
+     }
+  }
+  
+  function loadTexture(textureFileName, manager){
+    textureLoader = new THREE.TextureLoader(manager);
+    textureLoader.load(textureFileName,
       function(texture){
-        console.log("loader success");
-        storeTexture(texture, textureFile);
+        storeTexture(texture, textureFileName);
       },
       function(xhr){
-        // console.log("Texture " + textureFile + " " + Math.round(xhr.loaded / xhr.total * 100) + "%" );
+         console.log("Texture " + textureFileName + " " + Math.round(xhr.loaded / xhr.total * 100) + "%" );
       },
       function(xhr){
         console.log("loader error");
@@ -366,7 +373,7 @@ function Viewer(textureArray, element, options){
     meshControl.unbindControls();
   }
   
-  this.addTexture = loadTexture;
+  this.addTextures = loadTextures;
   this.restart = restartRender;
   this.halt = haltRender; 
   this.changeLighting = changeLighting;
