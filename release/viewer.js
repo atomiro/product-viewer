@@ -4,8 +4,8 @@
 function CameraDollyControl(camera, rendererElement, options){
 
   var settings = {
-    minZoomDistance: -12,
-    maxZoomDistance: -50,
+    minZoomDistance: 12,
+    maxZoomDistance: 50,
     minCameraHeight: 2.5,
     maxCameraHeight: 14.5,
     animationSpeed: .04,
@@ -23,7 +23,7 @@ function CameraDollyControl(camera, rendererElement, options){
   
   var initHeight = camera.position.y;
   var cameraHeight = camera.position.y;
-  var cameraDist = camera.position.x;
+  var cameraDist = camera.position.z;
   
   var mouse = {x: 0, y: 0};
   var mouseDown = false;
@@ -118,7 +118,7 @@ function CameraDollyControl(camera, rendererElement, options){
   function autoZoom(){
     isAnimating = true;
     
-    if (Math.abs(camera.position.x) > zoomThreshold) {
+    if (Math.abs(camera.position.z) > zoomThreshold) {
       if (progress == 0) { zoomingOut = false; }
     } else {
       if (progress == 0) { zoomingOut = true; }
@@ -174,7 +174,7 @@ function CameraDollyControl(camera, rendererElement, options){
   function interactiveZoom(speed, factor){
     cameraDist += speed * factor;
     constrainZoom(settings.minZoomDistance, settings.maxZoomDistance);
-    camera.position.x = cameraDist;
+    camera.position.z = cameraDist;
     centerCamera(); 
   }
   
@@ -206,7 +206,7 @@ function CameraDollyControl(camera, rendererElement, options){
       }
       
       camera.position.y = cameraHeight;
-      camera.position.x = cameraDist;
+      camera.position.z = cameraDist;
       camera.lookAt(new THREE.Vector3(0,(cameraHeight),0));
     }
     if (progress >= 1){
@@ -493,27 +493,11 @@ function CameraDollyControl(camera, rendererElement, options){
 
 } ;function Viewer(initTexture, element, options){
 
-  var lightingConfigLight = {
-      "key": 0.5,
-      "rim_right":  0.6,
-      "rim_left":  0.6,
-      "fill":  0.4,
-      "ambient": 0.6
-   }
-   
-   var lightingConfigDark = {
-      "key":  0.7,
-      "rim_right":  0.8,
-      "rim_left":  1.00,
-      "fill":  0.3,
-      "ambient": 0.3
-   }
-
   var settings = {
     sceneFile: "models_scene.json",
     fov: 23,
     aspectRatio: 4/5,
-    cameraXPosition: -35,
+    cameraXPosition: 35,
     cameraYPosition: 11.5,
     initialRotation: -90,
     sceneBackgroundColor: "transparent"
@@ -598,7 +582,8 @@ function CameraDollyControl(camera, rendererElement, options){
     }
     
     textureManager.onLoad = function(event){
-       //initScene();
+       console.log("texture added");
+       console.log(event);
     }
     
     loadTexture(initTexture, initManager);
@@ -609,7 +594,6 @@ function CameraDollyControl(camera, rendererElement, options){
     if (initialized == false){
         setupMeshes();
         setupCamera();
-        setupLighting(lightingConfigDark);
         render();
         
         triggerEvent('viewer.loaded');
@@ -620,7 +604,7 @@ function CameraDollyControl(camera, rendererElement, options){
   
   function setupCamera(){
     camera = new THREE.PerspectiveCamera(settings.fov, settings.aspectRatio, CAM_NEAR_PLANE, CAM_FAR_PLANE);
-    camera.position.x = settings.cameraXPosition;
+    camera.position.z = settings.cameraXPosition;
     
     var center = meshes[1].geometry.boundingBox.center().y * .13;
     camera.position.y = center;
@@ -639,11 +623,11 @@ function CameraDollyControl(camera, rendererElement, options){
     for (var i = 0; i < scene.children.length; i++){
         object = scene.children[i];
         if (object.type == "Mesh"){
-          object.rotation.y = settings.initialRotation * Math.PI / 180;
           meshes.push(object);
           var smoothGeometry = object.geometry.clone();
           object.material.map = textures[0];
           object.geometry.computeBoundingBox();
+          console.log(object.rotation.y);
         }
       }
       
@@ -654,34 +638,12 @@ function CameraDollyControl(camera, rendererElement, options){
   }
   
   function setupLighting(config){
-    lights = {
-      "key": scene.getObjectByName("LKEY"),
-      "rim_right": scene.getObjectByName("LRIM_Right"),
-      "rim_left": scene.getObjectByName("LRIM_Left"),
-      "fill": scene.getObjectByName("LFILL"),
-      "ambient": scene.getObjectByName("LAmbient")
-    }  
     
-    lights.key.intensity = config.key;
-    lights.rim_right.intensity = config.rim_right; 
-    lights.rim_left.intensity = config.rim_left;
-    lights.fill.intensity =  config.fill;
-    lights.ambient.intensity = config.ambient;
   }
   
   function changeLighting(style){
     //light or dark style 
-    if (style.toLowerCase() == "light") {
-      config = lightingConfigLight;
-    } else if (style.toLowerCase() == "dark"){
-      config = lightingConfigDark;
-    }
-    
-    lights.key.intensity = config.key;
-    lights.rim_right.intensity = config.rim_right; 
-    lights.rim_left.intensity = config.rim_left;
-    lights.fill.intensity =  config.fill;
-    lights.ambient.intensity = config.ambient;
+  
   }
   
   function getTextureByName(name){
@@ -869,7 +831,6 @@ function CameraDollyControl(camera, rendererElement, options){
   this.addTextures = loadTextures;
   this.restart = restartRender;
   this.halt = haltRender; 
-  this.changeLighting = changeLighting;
   
   this.create();
   
