@@ -21,14 +21,15 @@
       var isRendering = false;
     
       var settings = { 
-        sceneFile: "assets/scene_DarkDesign.json",
-        sceneBackgroundColor: "rgb(80, 40, 86)"
+        sceneFile: "assets/scene_good.json",
+        sceneBackgroundColor: "rgb(0, 40, 40)"
       }
       var viewerDiv = $('.preview');
-      viewer = new Viewer(['assets/Azalea-V1S13-01.jpg', 'assets/Bismuth-V1S12-Grey-01.jpg'], viewerDiv, settings);
+      viewer = new Viewer('assets/Azalea-V1S13-01.jpg', viewerDiv, settings);
       
       viewerDiv.on('viewer.loaded', function(){ 
         $(this).addClass("show-viewer"); 
+        viewer.addTextures(['assets/Bismuth-V1S12-Grey-01.jpg']);
         isRendering = true;
       });
       
