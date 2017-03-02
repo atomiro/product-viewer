@@ -4,8 +4,8 @@
 function CameraDollyControl(camera, rendererElement, options){
 
   var settings = {
-    minZoomDistance: -12,
-    maxZoomDistance: -50,
+    minZoomDistance: 12,
+    maxZoomDistance: 50,
     minCameraHeight: 2.5,
     maxCameraHeight: 14.5,
     animationSpeed: .04,
@@ -23,7 +23,7 @@ function CameraDollyControl(camera, rendererElement, options){
   
   var initHeight = camera.position.y;
   var cameraHeight = camera.position.y;
-  var cameraDist = camera.position.x;
+  var cameraDist = camera.position.z;
   
   var mouse = {x: 0, y: 0};
   var mouseDown = false;
@@ -118,7 +118,7 @@ function CameraDollyControl(camera, rendererElement, options){
   function autoZoom(){
     isAnimating = true;
     
-    if (Math.abs(camera.position.x) > zoomThreshold) {
+    if (Math.abs(camera.position.z) > zoomThreshold) {
       if (progress == 0) { zoomingOut = false; }
     } else {
       if (progress == 0) { zoomingOut = true; }
@@ -174,7 +174,7 @@ function CameraDollyControl(camera, rendererElement, options){
   function interactiveZoom(speed, factor){
     cameraDist += speed * factor;
     constrainZoom(settings.minZoomDistance, settings.maxZoomDistance);
-    camera.position.x = cameraDist;
+    camera.position.z = cameraDist;
     centerCamera(); 
   }
   
@@ -206,7 +206,7 @@ function CameraDollyControl(camera, rendererElement, options){
       }
       
       camera.position.y = cameraHeight;
-      camera.position.x = cameraDist;
+      camera.position.z = cameraDist;
       camera.lookAt(new THREE.Vector3(0,(cameraHeight),0));
     }
     if (progress >= 1){
