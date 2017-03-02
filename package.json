@@ -9,9 +9,44 @@
   "author": "Arielle Soutar",
   "license": "ISC",
   "devDependencies": {
+    "eslint-config-google": "^0.7.1",
     "grunt": "^0.4.5",
     "grunt-contrib-concat": "^1.0.0",
+    "grunt-contrib-uglify": "^2.0.0",
     "grunt-contrib-watch": "^0.6.1",
-    "grunt-contrib-uglify": "^2.0.0"
+    "grunt-eslint": "^19.0.0"
+  },
+  "eslintConfig": {
+    "env": {
+      "browser": 1
+    },
+    "globals": {
+      "THREE": 1
+    },
+    "extends": "google",
+    "rules": {
+      "padded-blocks": [
+        1,
+        "always"
+      ],
+      "space-in-parens": 1,
+      "space-before-blocks": 1,
+      "space-infix-ops": 0,
+      "no-trailing-spaces": [
+        1,
+        {
+          "skipBlankLines": true
+        }
+      ],
+      "no-unused-vars": ["error", { "vars": "local" }],
+      "no-var": 1,
+      "operator-assignment": 0,
+      "quotes": [
+        1,
+        "single"
+      ],
+      "eqeqeq": 0,
+      "strict": 0
+    }
   }
 }
