@@ -536,7 +536,7 @@ function CameraDollyControl(camera, rendererElement, options){
     objloader.load(sceneFile,
       setup,
       function(xhr){
-        console.log("Scene " + sceneFile );
+        console.log("Scene " + sceneFile + " " + Math.round(xhr.loaded / xhr.total * 100) + "%" );
       },
       function(xhr){
         console.log(xhr);
@@ -576,14 +576,12 @@ function CameraDollyControl(camera, rendererElement, options){
       console.log(event);
     }
     
-    textureManager.onProgress = function(event) {
-      //console.log("manager progress");
-      //console.log(event);
+    textureManager.onProgress = function(url, itemsLoaded, itemsTotal) {
+     console.log('Loading file: ' + url + '.\nLoaded ' + itemsLoaded + ' of ' + itemsTotal + ' files.');
     }
     
     textureManager.onLoad = function(event){
        console.log("texture added");
-       console.log(event);
     }
     
     loadTexture(initTexture, initManager);
@@ -624,10 +622,8 @@ function CameraDollyControl(camera, rendererElement, options){
         object = scene.children[i];
         if (object.type == "Mesh"){
           meshes.push(object);
-          var smoothGeometry = object.geometry.clone();
           object.material.map = textures[0];
           object.geometry.computeBoundingBox();
-          console.log(object.rotation.y);
         }
       }
       
@@ -637,13 +633,27 @@ function CameraDollyControl(camera, rendererElement, options){
     meshControl = new MeshControl(meshes, rendererElement);
   }
   
-  function setupLighting(config){
-    
-  }
-  
   function changeLighting(style){
     //light or dark style 
-  
+    style = style.toLowerCase();
+    if (style == "dark"){
+      scene.getObjectByName("DarkDesignLights").visible = true;
+      scene.getObjectByName("BrightDesignLights").visible = false;
+      scene.getObjectByName("MidDesignLights").visible = false;
+    } else if (style == "light"){
+      scene.getObjectByName("BrightDesignLights").visible = true;
+      scene.getObjectByName("DarkDesignLights").visible = false;
+      scene.getObjectByName("MidDesignLights").visible = false;
+    } else if (style == "mid"){
+      scene.getObjectByName("MidDesignLights").visible = true;
+      scene.getObjectByName("BrightDesignLights").visible = false;
+      scene.getObjectByName("DarkDesignLights").visible = false;
+    } else {
+      scene.getObjectByName("MidDesignLights").visible = true;
+      scene.getObjectByName("BrightDesignLights").visible = false;
+      scene.getObjectByName("DarkDesignLights").visible = false;
+    }
+      
   }
   
   function getTextureByName(name){
@@ -743,7 +753,6 @@ function CameraDollyControl(camera, rendererElement, options){
    } 
   
   function triggerEvent(eventName){
-    console.log(eventName);
     try {
       event = $.Event(eventName);  
       rendererElement.trigger(event);
@@ -831,6 +840,7 @@ function CameraDollyControl(camera, rendererElement, options){
   this.addTextures = loadTextures;
   this.restart = restartRender;
   this.halt = haltRender; 
+  this.changeLighting = changeLighting;
   
   this.create();
   
