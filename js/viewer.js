@@ -344,6 +344,16 @@ function Viewer(initTexture, element, options){
     meshControl.unbindControls();
   }
   
+  this.start = function(){
+    restartRender();
+    self.createControls();
+  }
+  
+  this.stop = function() {
+    haltRender();
+    self.unbindControls();
+  }
+  
   this.addTextures = loadTextures;
   this.restart = restartRender;
   this.halt = haltRender; 
