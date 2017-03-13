@@ -7,7 +7,9 @@ function Viewer(initTexture, element, options){
     cameraXPosition: 35,
     cameraYPosition: 11.5,
     initialRotation: -90,
-    sceneBackgroundColor: "transparent"
+    sceneBackgroundColor: "transparent",
+    lightSpecColor: 0x202020,
+    darkSpecColor: 0xa5a4a6
   }
   
   // INTERNALS 
@@ -43,7 +45,7 @@ function Viewer(initTexture, element, options){
     objloader.load(sceneFile,
       setup,
       function(xhr){
-        console.log("Scene " + sceneFile + " " + Math.round(xhr.loaded / xhr.total * 100) + "%" );
+        console.log("Scene " + sceneFile);
       },
       function(xhr){
         console.log(xhr);
@@ -104,6 +106,8 @@ function Viewer(initTexture, element, options){
         triggerEvent('viewer.loaded');
       
         initialized = true;
+        
+        console.log(scene);
       }
   }
   
@@ -143,11 +147,22 @@ function Viewer(initTexture, element, options){
   function changeLighting(style){
     //light or dark style 
     style = style.toLowerCase();
+    console.log("light style: " + style);
     if (style == "dark"){
+      // change specular color
+      specularColor = new THREE.Color(settings.darkSpecColor);
+      for (i=0; i < meshes.length; i++) {
+        meshes[i].material.specular = specularColor
+      }
       scene.getObjectByName("DarkDesignLights").visible = true;
       scene.getObjectByName("BrightDesignLights").visible = false;
       scene.getObjectByName("MidDesignLights").visible = false;
     } else if (style == "light"){
+      // change specular color
+      specularColor = new THREE.Color(settings.lightSpecColor);
+      for (i=0; i < meshes.length; i++) {
+        meshes[i].material.specular = specularColor
+      }
       scene.getObjectByName("BrightDesignLights").visible = true;
       scene.getObjectByName("DarkDesignLights").visible = false;
       scene.getObjectByName("MidDesignLights").visible = false;
@@ -195,7 +210,7 @@ function Viewer(initTexture, element, options){
         storeTexture(texture, textureFileName);
       },
       function(xhr){
-         console.log("Texture " + textureFileName + " " + Math.round(xhr.loaded / xhr.total * 100) + "%" );
+         //console.log("Texture " + textureFileName + " " + Math.round(xhr.loaded / xhr.total * 100) + "%" );
       },
       function(xhr){
         console.log("loader error");
