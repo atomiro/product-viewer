@@ -501,6 +501,10 @@ function CameraDollyControl(camera, rendererElement, options){
     cameraYPosition: 11.5,
     initialRotation: -90,
     sceneBackgroundColor: "transparent",
+    normalXS: "assets/maps/viewer_XS_2k_normal.jpg",
+    normal3XL: "assets/maps/viewer_3XL_2k_normal.jpg",
+    specularXS: "assets/maps/viewer_XS_2k_specular.jpg",
+    specular3XL: "assets/maps/viewer_3XL_2k_specular.jpg",
     lightSpecColor: 0x202020,
     darkSpecColor: 0xa5a4a6
   }
@@ -573,6 +577,10 @@ function CameraDollyControl(camera, rendererElement, options){
       initScene();
     }
     
+    initManager.onProgress = function(url, itemsLoaded, itemsTotal) {
+      console.log('INIT Loading file: ' + url + '.\nLoaded ' + itemsLoaded + ' of ' + itemsTotal + ' files.');
+    }
+    
     textureManager = new THREE.LoadingManager();
     
     textureManager.onError = function(event) {
@@ -589,13 +597,19 @@ function CameraDollyControl(camera, rendererElement, options){
     }
     
     loadTexture(initTexture, initManager);
- 
+    
+    loadTexture(settings.normalXS, initManager, 'XS_Normal');
+    loadTexture(settings.specularXS, initManager, 'XS_Specular');
+    loadTexture(settings.normal3XL, initManager, '3XL_Normal');
+    loadTexture(settings.specular3XL, initManager, '3XL_Specular');
+
   }
   
   function initScene(){
     if (initialized == false){
         setupMeshes();
         setupCamera();
+        changeLighting('mid');
         render();
         
         triggerEvent('viewer.loaded');
@@ -624,11 +638,20 @@ function CameraDollyControl(camera, rendererElement, options){
   }
   
   function setupMeshes(){
+    
     for (var i = 0; i < scene.children.length; i++){
         object = scene.children[i];
         if (object.type == "Mesh"){
           meshes.push(object);
-          object.material.map = textures[0];
+          console.log(object.name);
+          object.material.map = getTextureByName(initTexture);
+          if (object.name == 'artemix3XLMesh.js'){
+            object.material.normalMap = getTextureByName('3XL_Normal');
+            object.material.specularMap = getTextureByName('3XL_Specular');
+          } else {
+            object.material.normalMap = getTextureByName('XS_Normal');
+            object.material.specularMap = getTextureByName('XS_Specular');
+          }
           object.geometry.computeBoundingBox();
         }
       }
@@ -696,11 +719,15 @@ function CameraDollyControl(camera, rendererElement, options){
      }
   }
   
-  function loadTexture(textureFileName, manager){
+  function loadTexture(textureFileName, manager, newName){
     textureLoader = new THREE.TextureLoader(manager);
     textureLoader.load(textureFileName,
       function(texture){
-        storeTexture(texture, textureFileName);
+         if (newName){
+            storeTexture(texture, newName);
+          } else {
+            storeTexture(texture, textureFileName);
+          }
       },
       function(xhr){
          console.log("Texture " + textureFileName + " " + Math.round(xhr.loaded / xhr.total * 100) + "%" );
