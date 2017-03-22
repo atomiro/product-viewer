@@ -29,7 +29,7 @@ function Viewer(initTexture, element, options){
   
   var rendererElement = element;
   var canvasWidth = rendererElement.width();
-  var canvasHeight  = canvasWidth  / settings.aspectRatio;
+  var canvasHeight  = canvasWidth / settings.aspectRatio;
   var DEVICE_PIXEL_RATIO = window.devicePixelRatio ? window.devicePixelRatio : 1
   
   var CAM_FAR_PLANE = 500;
@@ -45,7 +45,9 @@ function Viewer(initTexture, element, options){
     objloader.load(sceneFile,
       setup,
       function(xhr){
-        console.log("Scene " + sceneFile);
+        var percent = Math.round(xhr.loaded / xhr.total * 75);
+        console.log("Scene " + sceneFile + " percent " + Math.round(xhr.loaded / xhr.total * 100));
+        triggerEvent('viewer.progress', {'percent': percent}); 
       },
       function(xhr){
         console.log(xhr);
@@ -149,7 +151,6 @@ function Viewer(initTexture, element, options){
     style = style.toLowerCase();
     console.log("light style: " + style);
     if (style == "dark"){
-      // change specular color
       specularColor = new THREE.Color(settings.darkSpecColor);
       for (i=0; i < meshes.length; i++) {
         meshes[i].material.specular = specularColor
@@ -158,7 +159,6 @@ function Viewer(initTexture, element, options){
       scene.getObjectByName("BrightDesignLights").visible = false;
       scene.getObjectByName("MidDesignLights").visible = false;
     } else if (style == "light"){
-      // change specular color
       specularColor = new THREE.Color(settings.lightSpecColor);
       for (i=0; i < meshes.length; i++) {
         meshes[i].material.specular = specularColor
@@ -210,7 +210,9 @@ function Viewer(initTexture, element, options){
         storeTexture(texture, textureFileName);
       },
       function(xhr){
-         //console.log("Texture " + textureFileName + " " + Math.round(xhr.loaded / xhr.total * 100) + "%" );
+         console.log("Texture " + textureFileName + " " + Math.round(xhr.loaded / xhr.total * 100) + "%" );
+         percent = Math.round((xhr.loaded / xhr.total * 100) * .25) + 75
+         triggerEvent('viewer.progress', {'percent': percent}); 
       },
       function(xhr){
         console.log("loader error");
@@ -274,9 +276,12 @@ function Viewer(initTexture, element, options){
      element.css("cursor", "grab");
    } 
   
-  function triggerEvent(eventName){
+  function triggerEvent(eventName, detail){
     try {
-      event = $.Event(eventName);  
+      event = $.Event(eventName); 
+      if (detail){
+        event.detail = detail;
+      }
       rendererElement.trigger(event);
     } catch (e) {  
       console.warn("Modern Event API not supported", e);
@@ -331,6 +336,20 @@ function Viewer(initTexture, element, options){
     }
     
     triggerEvent('viewer.switchtexture');
+  }
+  
+  this.useLocalTexture = function (texture_img, filename){
+    texture = new THREE.Texture(texture_img);
+    storeTexture(texture, filename);
+    self.switchTexture(filename);
+    
+    triggerEvent('viewer.switchtexture');
+  }
+  
+  this.addLocalTexture = function (texture_img, filename){
+    console.log(filename);
+    texture = new THREE.Texture(texture_img);
+    storeTexture(texture, filename);
   }
   
   this.displayModel = function(size){
