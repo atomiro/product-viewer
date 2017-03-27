@@ -96,11 +96,11 @@ function Viewer(initTexture, element, options){
     }
     
     textureManager.onProgress = function(url, itemsLoaded, itemsTotal) {
-     console.log('Loading file: ' + url + '.\nLoaded ' + itemsLoaded + ' of ' + itemsTotal + ' files.');
+     //console.log('Loading file: ' + url + '.\nLoaded ' + itemsLoaded + ' of ' + itemsTotal + ' files.');
     }
     
     textureManager.onLoad = function(event){
-       console.log("texture added");
+       //console.log("texture added");
     }
     
     loadTexture(initTexture, initManager);
