@@ -6,7 +6,7 @@ function Viewer(initTexture, element, options){
     aspectRatio: 4/5,
     cameraXPosition: 35,
     cameraYPosition: 11.5,
-    initialRotation: -90,
+    initialRotation: 20,
     sceneBackgroundColor: "transparent",
     normalXS: "assets/maps/viewer_XS_2k_normal.jpg",
     normal3XL: "assets/maps/viewer_3XL_2k_normal.jpg",
@@ -122,8 +122,6 @@ function Viewer(initTexture, element, options){
         triggerEvent('viewer.loaded');
       
         initialized = true;
-        
-        console.log(scene);
       }
   }
   
@@ -160,6 +158,7 @@ function Viewer(initTexture, element, options){
             object.material.specularMap = getTextureByName('XS_Specular');
           }
           object.geometry.computeBoundingBox();
+          object.rotation.y = radians(settings.initialRotation);
         }
       }
       
@@ -172,7 +171,6 @@ function Viewer(initTexture, element, options){
   function changeLighting(style){
     //light or dark style 
     style = style.toLowerCase();
-    console.log("light style: " + style);
     if (style == "dark"){
       specularColor = new THREE.Color(settings.darkSpecColor);
       for (i=0; i < meshes.length; i++) {
@@ -321,6 +319,11 @@ function Viewer(initTexture, element, options){
       eventElement.dispatchEvent(event);
     }
   }
+  
+  function radians(deg){
+    var rad = deg * (Math.PI/180);
+    return rad
+  }
    
   this.create = function(){
     $.extend(settings, options);
@@ -374,7 +377,6 @@ function Viewer(initTexture, element, options){
   }
   
   this.addLocalTexture = function (texture_img, filename){
-    console.log(filename);
     texture = new THREE.Texture(texture_img);
     storeTexture(texture, filename);
   }
