@@ -1,5 +1,7 @@
 # viewer
 WebGL Leggsy viewer 
 
-See an example and read the documentation here
+See the example Viewer here: 
 https://bombsheller.github.io/viewer/
+
+and read the [docs in the wiki](https://github.com/Bombsheller/viewer/wiki)! 
