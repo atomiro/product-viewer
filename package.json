@@ -21,7 +21,9 @@
       "browser": 1
     },
     "globals": {
-      "THREE": 1
+      "THREE": 1,
+      "$": 1,
+      "jQuery": 1
     },
     "extends": "google",
     "rules": {
@@ -32,14 +34,13 @@
       "space-in-parens": 1,
       "space-before-blocks": 1,
       "space-infix-ops": 0,
+      "no-var": 0,
       "no-trailing-spaces": [
         1,
         {
           "skipBlankLines": true
         }
       ],
-      "no-unused-vars": ["error", { "vars": "local" }],
-      "no-var": 1,
       "operator-assignment": 0,
       "quotes": [
         1,
