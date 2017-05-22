@@ -1,6 +1,3 @@
-//
-// Zoom with scroll wheel and vertical pan by clicking a dragging up and down
-//
 function CameraDollyControl(camera, rendererElement, options){
 
   var settings = {
@@ -172,7 +169,8 @@ function CameraDollyControl(camera, rendererElement, options){
    }
   
   function interactiveZoom(speed, factor){
-    cameraDist += speed * factor;
+    //cameraDist += speed * factor;
+    cameraDist -= speed * factor;
     constrainZoom(settings.minZoomDistance, settings.maxZoomDistance);
     camera.position.z = cameraDist;
     centerCamera(); 
@@ -224,6 +222,7 @@ function CameraDollyControl(camera, rendererElement, options){
      cameraHeight = ControlUtils.clamp(cameraHeight, min, max);
   }
   
+  /*
   function getMouseMoveDelta(event) {
     var deltaX = 0;
     var deltaY = 0;
@@ -237,6 +236,7 @@ function CameraDollyControl(camera, rendererElement, options){
     mouse.y = event.pageY;  
     return [deltaX, deltaY];
   } 
+  */
   
   this.animate = function(){
     animateZoom(settings.animationSpeed);

@@ -1,6 +1,3 @@
-//
-// Zoom with scroll wheel and vertical pan by clicking a dragging up and down
-//
 function CameraDollyControl(camera, rendererElement, options){
 
   var settings = {
@@ -172,7 +169,8 @@ function CameraDollyControl(camera, rendererElement, options){
    }
   
   function interactiveZoom(speed, factor){
-    cameraDist += speed * factor;
+    //cameraDist += speed * factor;
+    cameraDist -= speed * factor;
     constrainZoom(settings.minZoomDistance, settings.maxZoomDistance);
     camera.position.z = cameraDist;
     centerCamera(); 
@@ -224,6 +222,7 @@ function CameraDollyControl(camera, rendererElement, options){
      cameraHeight = ControlUtils.clamp(cameraHeight, min, max);
   }
   
+  /*
   function getMouseMoveDelta(event) {
     var deltaX = 0;
     var deltaY = 0;
@@ -237,6 +236,7 @@ function CameraDollyControl(camera, rendererElement, options){
     mouse.y = event.pageY;  
     return [deltaX, deltaY];
   } 
+  */
   
   this.animate = function(){
     animateZoom(settings.animationSpeed);
@@ -385,9 +385,6 @@ function CameraDollyControl(camera, rendererElement, options){
   var lastDistance = 0;
   var currentDistance = 0;
   
-  var currentDirection;
-  var lastDirection;
-  
   this.deltaDistance = 0;
   
   var self = this;
@@ -429,6 +426,7 @@ function CameraDollyControl(camera, rendererElement, options){
        } else if (event.touches.length == 2) {
          currentDistance = touchDistance(event);
          self.deltaDistance = currentDistance - lastDistance;
+         console.log('delta', self.deltaDistance);
          lastDistance = currentDistance;
        }
    }
@@ -450,16 +448,17 @@ function CameraDollyControl(camera, rendererElement, options){
    }
    
    function touchDistance(event){
-      var dx = event.touches[ 0 ].pageX - event.touches[ 1 ].pageX;
-	  var dy = event.touches[ 0 ].pageY - event.touches[ 1 ].pageY; 
-	  
-	  var distance = Math.sqrt( dx * dx + dy * dy );
-	  return distance;
+     var dx = Math.abs(event.touches[ 0 ].pageX - event.touches[ 1 ].pageX);
+	   var dy = Math.abs(event.touches[ 0 ].pageY - event.touches[ 1 ].pageY);
+	   console.log('dx', dx, 'dy', dy); 
+	   
+	   var distance = Math.sqrt( dx * dx + dy * dy );
+	   console.log('distance', distance); 
+	   return distance;
    }
    
    function detectAxis(){
      var axisDiff = Math.abs(self.deltaY - self.deltaX);
-     console.log(axisDiff);
      if (Math.abs(self.deltaY) > Math.abs(self.deltaX)){
        if (axisDiff > 2) {
          self.axis = "VERTICAL";
