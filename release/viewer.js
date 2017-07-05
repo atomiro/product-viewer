@@ -1,18 +1,28 @@
+/**
+  Animate a camera for zooming in and out
+  @param {Object} camera - THREE.js Camera Object
+  @param {Object} rendererElement - HTML element selected by jQuery
+  @param {Object} options - options object
+  @return {CameraDollyControl}
+  @constructor
+*/
 function CameraDollyControl(camera, rendererElement, options) {
 
+  /** @private */
   var settings = {
   
-    minZoomDistance: 12,
-    maxZoomDistance: 50,
+    minZoom: 12,
+    maxZoom: 50,
     minCameraHeight: 2.5,
     maxCameraHeight: 14.5,
     animationSpeed: .04,
     touchPanSpeedFactor: .3,
     mousePanSpeedFactor: .015,
-    interactiveZoomSpeedFactor: .2,
+    zoomSpeedFactor: .2,
     
   };
-
+  
+  /** @member {number} */
   this.panLockAt;
 
   var touchTracker = new TouchTracker(rendererElement);
@@ -20,34 +30,43 @@ function CameraDollyControl(camera, rendererElement, options) {
   var lastTouchTime;
   
   var zoomThreshold;
+  
   var totalZoomDist;
   
   var scrollDelta;
-
+  
   var initHeight = camera.position.y;
+  
   var cameraHeight = camera.position.y;
+  
   var cameraDist = camera.position.z;
   
   var lastPosition = {x: 0, y: 0};
 
   var mouseIn = false;
-
+  
+  var mouseDown = false;
+  
   var isAnimating = false;
+  
   var zoomingOut = false;
+  
   var progress = 0;
-
+  
   var self = this;
 
   init();
 
+  /** @private */
   function init() {
 
     $.extend(settings, options);
     
-    self.panLockAt = Math.abs(settings.maxZoomDistance) - 3;
+    self.panLockAt = Math.abs(settings.maxZoom) - 3;
     
-    totalZoomDist = Math.abs(settings.minZoomDistance - settings.maxZoomDistance);
-    zoomThreshold = Math.abs(settings.maxZoomDistance - settings.minZoomDistance/ 2);
+    totalZoomDist = Math.abs(settings.minZoom - settings.maxZoom);
+      
+    zoomThreshold = Math.abs(settings.maxZoom - settings.minZoom / 2);
     
     rendererElement.dblclick(onDblClick);
     
@@ -63,6 +82,7 @@ function CameraDollyControl(camera, rendererElement, options) {
     
   }
   
+  /** @private */
   function initControls() {
   
     rendererElement.dblclick(onDblClick);
@@ -79,6 +99,7 @@ function CameraDollyControl(camera, rendererElement, options) {
     
   }
   
+  /** @private */
   function unbindControls() {
   
     rendererElement.off('dblclick', onDblClick);
@@ -94,12 +115,17 @@ function CameraDollyControl(camera, rendererElement, options) {
     
   }
   
-  function onDblClick(event) {
+  /** @private */
+  function onDblClick() {
   
     autoZoom();
     
   }
   
+  /**
+  @private
+  @param {event} event - touch/pointer event
+  */
   function onTouchEnd(event) {
   
      var delay = 300;
@@ -121,6 +147,7 @@ function CameraDollyControl(camera, rendererElement, options) {
      
   }
   
+  /** @private */
   function autoZoom() {
   
     isAnimating = true;
@@ -145,30 +172,38 @@ function CameraDollyControl(camera, rendererElement, options) {
     
   }
   
-  function onMouseDown(event) {
+  /** @private */
+  function onMouseDown() {
   
     mouseDown = true;
     
   }
   
-  function onMouseUp(event) {
+  /** @private */
+  function onMouseUp() {
   
     mouseDown = false;
     
   }
   
-  function onHoverIn(event) {
+  /** @private */
+  function onHoverIn() {
   
     mouseIn = true;
     
   }
   
-  function onHoverOut(event) {
+  /** @private */
+  function onHoverOut() {
   
     mouseIn = false;
     
   }
   
+  /**
+    @private
+    @param {event} event - mouse/pointer event
+  */
   function onMouseMove(event) {
   
     if (Math.abs(cameraDist) < self.panLockAt) {
@@ -185,6 +220,10 @@ function CameraDollyControl(camera, rendererElement, options) {
     
   }
   
+  /**
+    @private
+    @param {event} event - touch/pointer event
+  */
   function onMouseWheel(event) {
 
     if (mouseIn) {
@@ -192,12 +231,16 @@ function CameraDollyControl(camera, rendererElement, options) {
       isAnimating = false;
       event.preventDefault();
       scrollDelta = ControlUtils.clamp(event.deltaY, -100, 100);
-      interactiveZoom(scrollDelta, settings.interactiveZoomSpeedFactor);
+      interactiveZoom(scrollDelta, settings.zoomSpeedFactor);
   
     }
 
   }
    
+   /**
+    @private
+    @param {event} event - touch/pointer event
+  */
    function onTouchMove(event) {
 
      if (event.touches.length == 1) {
@@ -218,21 +261,31 @@ function CameraDollyControl(camera, rendererElement, options) {
 
         event.preventDefault();
         isAnimating = false;
-        interactiveZoom(touchTracker.deltaDistance, settings.interactiveZoomSpeedFactor);
+        interactiveZoom(touchTracker.deltaDistance, settings.zoomSpeedFactor);
         
      }
      
    }
   
+  /**
+    @private
+    @param {number} speed
+    @param {number} factor - adjust speed
+  */
   function interactiveZoom(speed, factor) {
 
     cameraDist -= speed * factor;
-    constrainZoom(settings.minZoomDistance, settings.maxZoomDistance);
+    constrainZoom(settings.minZoom, settings.maxZoom);
     camera.position.z = cameraDist;
     centerCamera();
 
   }
   
+  /**
+    @private
+    @param {number} speed
+    @param {number} factor - adjust speed
+  */
   function pan(speed, factor) {
   
     cameraHeight -= speed * factor;
@@ -242,15 +295,20 @@ function CameraDollyControl(camera, rendererElement, options) {
 
   }
   
+  /** @private */
   function centerCamera() {
   
-    zoomLevel = Math.abs(cameraDist - settings.minZoomDistance) / totalZoomDist;
+    zoomLevel = Math.abs(cameraDist - settings.minZoom) / totalZoomDist;
     cameraHeight = ControlUtils.lerp(cameraHeight, initHeight, zoomLevel);
     camera.position.y = cameraHeight;
     camera.lookAt(new THREE.Vector3(0, cameraHeight, 0));
     
   }
   
+  /**
+    @private
+    @param {number} step - step number (between 0 and 1) for incrementing a lerp
+  */
   function animateZoom(step) {
 
     if (isAnimating) {
@@ -262,11 +320,11 @@ function CameraDollyControl(camera, rendererElement, options) {
       
       if (zoomingOut) {
       
-        cameraDist = ControlUtils.lerp(cameraDist, settings.maxZoomDistance, progress);
+        cameraDist = ControlUtils.lerp(cameraDist, settings.maxZoom, progress);
         
       } else {
       
-        cameraDist = ControlUtils.lerp(cameraDist, settings.minZoomDistance, progress);
+        cameraDist = ControlUtils.lerp(cameraDist, settings.minZoom, progress);
         
       }
       
@@ -285,6 +343,11 @@ function CameraDollyControl(camera, rendererElement, options) {
      
   }
 
+  /**
+    @private
+    @param {number} min
+    @param {number} max
+  */
   function constrainZoom(min, max) {
 
     if (Math.abs(cameraDist) < Math.abs(min)) {
@@ -300,13 +363,23 @@ function CameraDollyControl(camera, rendererElement, options) {
     }
 
   }
-      
+   
+  /**
+    @private
+    @param {number} min
+    @param {number} max
+  */
   function constrainVerticalPan(min, max) {
 
      cameraHeight = ControlUtils.clamp(cameraHeight, min, max);
 
   }
   
+  /**
+     @private
+     @param {event} event - mouse/pointer event
+     @return {Array} deltas - [deltaX, deltaY]
+  */
   function getMouseMoveDelta(event) {
   
     var deltaX = 0;
@@ -320,31 +393,45 @@ function CameraDollyControl(camera, rendererElement, options) {
     }
         
     lastPosition.x = event.pageX;
-    lastPosition.y = event.pageY; 
+    lastPosition.y = event.pageY;
      
     return [deltaX, deltaY];
     
-  } 
+  }
   
-  
+  /**
+  Animate the camera
+  */
   this.animate = function() {
 
     animateZoom(settings.animationSpeed);
 
   };
-  
+   /**
+   Register event listeners to the rendererElement
+   @function
+   */
   this.registerControls = initControls;
+  
+   /**
+   Remove event listeners from the rendererElement
+   @function
+   */
   this.unbindControls = unbindControls;
   
   return this;
 
 }
-;function MeshControl(meshes, rendererElement, options) {
-
-//
-// Rotate multiple meshes by clicking and dragging side to side
-//
-
+;/**
+  Rotate multiple meshes using mouse or touch controls.
+  @param {Array} meshes - Array of THREE.js Mesh Objects
+  @param {Object} rendererElement - HTML element selected with jQuery
+  @param {Object} options - options object
+  @return {MeshControl}
+  @constructor
+*/
+function MeshControl(meshes, rendererElement, options) {
+   
    settings = {
    
      mouseSpeedFactor: .7,
@@ -370,6 +457,9 @@ function CameraDollyControl(camera, rendererElement, options) {
    
    init();
    
+   /**
+     @private
+   */
    function init() {
    
      $.extend(settings, options);
@@ -377,8 +467,11 @@ function CameraDollyControl(camera, rendererElement, options) {
      registerControls();
      
    }
-   
-  function registerControls() {
+  
+   /**
+     @private
+   */
+   function registerControls() {
   
      rendererElement.mousedown(onMouseDown);
      rendererElement.mouseup(onMouseUp);
@@ -388,9 +481,12 @@ function CameraDollyControl(camera, rendererElement, options) {
      
      rendererElement[0].addEventListener('touchmove', onTouchMove, false);
      
-  }
-  
-  function unbindControls() {
+   }
+   
+   /**
+     @private
+   */
+   function unbindControls() {
   
      rendererElement.off('mousedown', onMouseDown);
      rendererElement.off('mouseup', onMouseUp);
@@ -398,9 +494,13 @@ function CameraDollyControl(camera, rendererElement, options) {
      
      rendererElement[0].removeEventListener('touchmove', onTouchMove);
      
-  }
+   }
    
-  function onMouseMove(event) {
+   /**
+     @private
+     @param {event} event - mouse/pointer event
+   */
+   function onMouseMove(event) {
   
      updateMouseMoveDelta(event);
      
@@ -414,31 +514,47 @@ function CameraDollyControl(camera, rendererElement, options) {
      
    }
    
-   function onMouseDown(event) {
+   /**
+     @private
+   */
+   function onMouseDown() {
    
      mouseDown = true;
      
    }
    
-   function onMouseUp(event) {
+   /**
+     @private
+   */
+   function onMouseUp() {
    
      mouseDown = false;
      
    }
    
-   function onMouseIn(event) {
+   /**
+     @private
+   */
+   function onMouseIn() {
    
       mouseIn = true;
       
    }
    
-   function onMouseOut(event) {
+   /**
+     @private
+   */
+   function onMouseOut() {
    
      mouseIn = false;
      mouseDown = false;
      
    }
    
+   /**
+     @private
+     @param {event} event - touch/pointer event
+   */
    function onTouchMove(event) {
    
      if (event.touches.length == 1) {
@@ -447,7 +563,8 @@ function CameraDollyControl(camera, rendererElement, options) {
        
           event.preventDefault();
           
-          var angle = (touchTracker.speedX * Math.PI / 180) * settings.touchSpeedFactor;
+          var angle = (touchTracker.speedX * Math.PI / 180)
+            * settings.touchSpeedFactor;
             
           rotateTo(angle);
           
@@ -456,7 +573,11 @@ function CameraDollyControl(camera, rendererElement, options) {
      }
      
    }
-
+   
+   /**
+     @private
+     @param {number} angle - in radians
+   */
    function rotateTo(angle) {
      
      var axisOfRotation = new THREE.Vector3(0, 1, 0);
@@ -469,6 +590,10 @@ function CameraDollyControl(camera, rendererElement, options) {
      
    }
    
+   /**
+     @private
+     @param {event} event - mouse/pointer event
+   */
    function updateMouseMoveDelta(event) {
    
         mouseDeltaX = 0;
@@ -486,13 +611,32 @@ function CameraDollyControl(camera, rendererElement, options) {
         
    }
    
+   /**
+   Register event listeners to the rendererElement
+   @function
+   */
    this.registerControls = registerControls;
+   
+   /**
+   Remove event listeners from the rendererElement
+   @function
+   */
    this.unbindControls = unbindControls;
    
    return this;
 
 }
-;function TouchTracker(element) {
+;/**
+  TouchTracker distills touch events on an element into speed
+  and direction of swipe.
+  Also allows access to distance deltas for axes and
+  distance between touch points.
+  
+  @param {Object} element - HTML element selected by jQuery
+  @return {TouchTracker}
+  @constructor
+*/
+function TouchTracker(element) {
   
   var currentDistance = 0;
   
@@ -500,19 +644,31 @@ function CameraDollyControl(camera, rendererElement, options) {
   var lastTouchTime;
   var lastDistance = 0;
    
+  /** @member {number} */
   this.deltaX = 0;
+  
+  /** @member {number} */
   this.deltaY = 0;
+  
+  /** @member {number} */
   this.deltaDistance = 0;
   
+  /** @member */
   this.speedX = 0;
+  
+  /** @member {number} */
   this.speedY = 0;
   
+  /** @member {string} */
   this.axis = 'HORIZONTAL';
   
   var self = this;
    
   init();
-
+  
+   /**
+     @private
+   */
   function init() {
   
     var el = element[0];
@@ -521,7 +677,11 @@ function CameraDollyControl(camera, rendererElement, options) {
     el.addEventListener('touchend', onTouchEnd, false);
     
   }
-    
+  
+   /**
+     @private
+     @param {event} event - touch/pointer event
+   */
   function onTouchStart(event) {
   
      startTime = event.timeStamp;
@@ -544,6 +704,10 @@ function CameraDollyControl(camera, rendererElement, options) {
      
    }
    
+   /**
+     @private
+     @param {event} event - touch/pointer event
+   */
    function onTouchMove(event) {
    
        if (event.touches.length == 1) {
@@ -565,7 +729,10 @@ function CameraDollyControl(camera, rendererElement, options) {
        
    }
    
-   function onTouchEnd(event) {
+    /**
+     @private
+   */
+   function onTouchEnd() {
    
      self.deltaX = 0;
      self.deltaY = 0;
@@ -573,6 +740,10 @@ function CameraDollyControl(camera, rendererElement, options) {
      
    }
    
+    /**
+     @private
+     @param {event} event - touch/pointer event
+   */
    function getTouchMoveDelta(event) {
         
      self.deltaX = lastPosition.x - event.touches[0].pageX;
@@ -582,6 +753,11 @@ function CameraDollyControl(camera, rendererElement, options) {
       
    }
    
+   /**
+     @private
+     @param {event} event - touch/pointer event
+     @return {number} distance - distance between touch points
+   */
    function touchDistance(event) {
    
      var dx = Math.abs(event.touches[0].pageX - event.touches[1].pageX);
@@ -593,6 +769,9 @@ function CameraDollyControl(camera, rendererElement, options) {
      
    }
    
+   /**
+     @private
+   */
    function detectAxis() {
    
      var axisDiff = Math.abs(self.deltaY - self.deltaX);
@@ -616,7 +795,12 @@ function CameraDollyControl(camera, rendererElement, options) {
      }
      
    }
-  
+   
+   /**
+     @function
+     @param {event} event - touch/pointer event object
+     @return {Object} deltas - {dx:deltaX, dy:deltaY}
+   */
    this.getDeltas = function(event) {
    
      getTouchMoveDelta(event);
@@ -628,15 +812,34 @@ function CameraDollyControl(camera, rendererElement, options) {
    return this;
    
 }
-;var ControlUtils = {
-
+;/**
+  Animation utility functions
+  @namespace
+*/
+var ControlUtils = {
+ /**
+  constrain a value between min and max
+  @function  ControlUtils~clamp
+  @param {Number} value
+  @param {Number} min
+  @param {Number} max
+  @return {Number}
+  */
  clamp: function(value, min, max) {
  
     var clampedValue = (value > max) ? max : (value < min) ? min : value;
     return clampedValue;
     
   },
-  
+  /**
+  "lerp" stands for Linear Interpolation
+  @function ControlUtils~lerp
+  @param {Number} p0 - starting postion
+  (you may also think of it as current postion)
+  @param {Number} p1 - ending position
+  @param {Number} progress - expressed in a fraction between 0 and 1
+  @return {Number}
+  */
  lerp: function(p0, p1, progress) {
  
     ControlUtils.clamp(progress, 0, 1);
@@ -646,7 +849,15 @@ function CameraDollyControl(camera, rendererElement, options) {
   },
 
 };
-;function Viewer(initTexture, element, options) {
+;/**
+  Viewer creates a 3D render using an initial texture with an html element
+  @param {string} initTexture - path to a texture to initialize with
+  @param {Object} element - HTML element selected with JQuery
+  @param {Object} options - options object
+  @return {Viewer} Viewer
+  @constructor
+*/
+function Viewer(initTexture, element, options) {
 
   var settings = {
   
@@ -675,38 +886,44 @@ function CameraDollyControl(camera, rendererElement, options) {
   var camera;
   var renderer;
   
-  var meshes = [];
-  
-  var meshControl;
   var cameraControl;
   
+  var meshes = [];
+  var meshControl;
+    
   var textures = [];
   var textureManager;
   
   var rendererElement = element;
+  
   var canvasWidth = rendererElement.width();
   var canvasHeight = canvasWidth / settings.aspectRatio;
-  var DEVICE_PIXEL_RATIO = window.devicePixelRatio ? window.devicePixelRatio : 1;
+  
+  var DEVICE_PIXEL_RATIO = window.devicePixelRatio ?
+    window.devicePixelRatio : 1;
   
   var CAM_FAR_PLANE = 500;
   var CAM_NEAR_PLANE = 0.1;
   
   var self = this;
   
+  /** 
+    @private 
+    load scene created with the THREE.js Scene Editor
+  */
   function loadScene() {
-  
-    // load scene json file created with three.js editor
-    
-    var sceneFile = settings.sceneFile;
+      
+    var file = settings.sceneFile;
     var objloader = new THREE.ObjectLoader();
         
-    objloader.load(sceneFile,
-      setup,
+    objloader.load(file,
+      init,
       function(xhr) {
       
-        var percent = Math.round(xhr.loaded / xhr.total * 75);
-        console.log('Scene ' + sceneFile + ' percent ' + Math.round(xhr.loaded / xhr.total * 100));
-        triggerEvent('viewer.progress', {'percent': percent});
+        var percent = Math.round(xhr.loaded / xhr.total * 100);
+        var partialPercent = Math.round(xhr.loaded / xhr.total * 75);
+        
+        triggerEvent('viewer.progress', {'percent': partialPercent});
         
       },
       function(xhr) {
@@ -717,11 +934,16 @@ function CameraDollyControl(camera, rendererElement, options) {
     
   }
   
-  function setup(sceneFile) {
+  /**
+    @private
+    @param {Object} sceneFile - THREE.js Scene json object
+  */
+  function init(file) {
   
     renderer = new THREE.WebGLRenderer({alpha: true, antialias: true});
     renderer.setPixelRatio(DEVICE_PIXEL_RATIO);
     renderer.setSize(canvasWidth, canvasHeight);
+    
     rendererElement.append(renderer.domElement);
     
     if (settings.sceneBackgroundColor == 'transparent') {
@@ -734,21 +956,21 @@ function CameraDollyControl(camera, rendererElement, options) {
       
       if (bgcolor) {
       
-        sceneFile.background = bgcolor;
+        file.background = bgcolor;
         
       } else {
       
-        sceneFile.background = new THREE.Color(0x000000);
+        file.background = new THREE.Color(0x000000);
         
       }
        
     }
       
-    scene = sceneFile;
+    scene = file;
     
     initManager = new THREE.LoadingManager();
     
-    initManager.onLoad = function(event) {
+    initManager.onLoad = function() {
     
       initScene();
       
@@ -756,7 +978,9 @@ function CameraDollyControl(camera, rendererElement, options) {
     
     initManager.onProgress = function(url, itemsLoaded, itemsTotal) {
     
-      console.log('INIT Loading file: ' + url + '.\nLoaded ' + itemsLoaded + ' of ' + itemsTotal + ' files.');
+      console.log('INIT Loading file: ' + url +
+        '.\nLoaded ' + itemsLoaded +
+        ' of ' + itemsTotal + ' files.');
       
     };
     
@@ -771,11 +995,13 @@ function CameraDollyControl(camera, rendererElement, options) {
     
     textureManager.onProgress = function(url, itemsLoaded, itemsTotal) {
     
-     // console.log('Loading file: ' + url + '.\nLoaded ' + itemsLoaded + ' of ' + itemsTotal + ' files.');
+      console.log('Loading file: ' + url +
+       '.\nLoaded ' + itemsLoaded + ' of '
+       + itemsTotal + ' files.');
      
     };
     
-    textureManager.onLoad = function(event) {
+    textureManager.onLoad = function() {
     
        // console.log("texture added");
        
@@ -790,13 +1016,16 @@ function CameraDollyControl(camera, rendererElement, options) {
 
   }
   
+  /** @private */
   function initScene() {
   
     if (initialized == false) {
     
-        setupMeshes();
-        setupCamera();
-        changeLighting('mid');
+        initMeshes();
+        initCamera();
+        
+        useLighting('mid');
+        
         render();
         
         triggerEvent('viewer.loaded');
@@ -807,9 +1036,11 @@ function CameraDollyControl(camera, rendererElement, options) {
       
   }
   
-  function setupCamera() {
+  /** @private */
+  function initCamera() {
   
-    camera = new THREE.PerspectiveCamera(settings.fov, settings.aspectRatio, CAM_NEAR_PLANE, CAM_FAR_PLANE);
+    camera = new THREE.PerspectiveCamera(settings.fov,
+      settings.aspectRatio, CAM_NEAR_PLANE, CAM_FAR_PLANE);
     
     camera.position.z = settings.cameraXPosition;
     
@@ -824,11 +1055,13 @@ function CameraDollyControl(camera, rendererElement, options) {
       
     };
     
-    cameraControl = new CameraDollyControl(camera, rendererElement, cameraSettings);
+    cameraControl = new CameraDollyControl(camera,
+      rendererElement, cameraSettings);
 
   }
   
-  function setupMeshes() {
+  /** @private */
+  function initMeshes() {
     
     for (var i = 0; i < scene.children.length; i++) {
     
@@ -837,7 +1070,6 @@ function CameraDollyControl(camera, rendererElement, options) {
         if (object.type == 'Mesh') {
         
           meshes.push(object);
-          console.log(object.name);
           object.material.map = getTextureByName(initTexture);
           
           if (object.name == 'artemix3XLMesh.js') {
@@ -866,7 +1098,11 @@ function CameraDollyControl(camera, rendererElement, options) {
     
   }
   
-  function changeLighting(style) {
+  /**
+    @private
+    @param {string} style - "Light", "Dark" or "Mid"
+  */
+  function useLighting(style) {
   
     // light or dark style
     
@@ -916,6 +1152,11 @@ function CameraDollyControl(camera, rendererElement, options) {
       
   }
   
+  /**
+    @private
+    @param {string} name - name texture was saved with
+    @return {THREE.Texture}
+  */
   function getTextureByName(name) {
   
     var texture;
@@ -934,6 +1175,11 @@ function CameraDollyControl(camera, rendererElement, options) {
     
   }
   
+  /**
+    @private
+    @param {string} name - name of mesh objects in scene file
+    @return {THREE.Mesh}
+  */
   function getMeshByName(name) {
   
     var mesh;
@@ -952,39 +1198,53 @@ function CameraDollyControl(camera, rendererElement, options) {
     
   }
   
-  function loadTextures(textureFileArray) {
+  /**
+    @private
+    @param {Array|string} paths - Array of file paths
+  */
+  function loadTextures(paths) {
   
-    for (var i = 0; i < textureFileArray.length; i++) {
+    for (var i = 0; i < paths.length; i++) {
     
-        loadTexture(textureFileArray[i], textureManager);
+        loadTexture(paths[i], textureManager);
         
      }
      
   }
   
-  function loadTexture(textureFileName, manager, newName) {
+  /**
+    @private
+    @param {string} path - file path to texture
+    @param {string} name - override current file name when
+    saving it as a texture
+    @param {THREE.LoadingManager} manager - THREE.js loading manager
+  */
+  function loadTexture(path, manager, name) {
   
     textureLoader = new THREE.TextureLoader(manager);
     
-    textureLoader.load(textureFileName,
+    textureLoader.load(
+      path,
       function(texture) {
       
-         if (newName) {
+         if (name) {
          
-            storeTexture(texture, newName);
+            storeTexture(texture, name);
             
           } else {
           
-            storeTexture(texture, textureFileName);
+            storeTexture(texture, path);
             
           }
           
       },
       function(xhr) {
-      
-         console.log('Texture ' + textureFileName + ' ' + Math.round(xhr.loaded / xhr.total * 100) + '%');
-         percent = Math.round((xhr.loaded / xhr.total * 100) * .25) + 75;
-         triggerEvent('viewer.progress', {'percent': percent});
+         
+         var percentage = Math.round(xhr.loaded / xhr.total * 100);
+         console.log('Texture ' + path + ' ' + percentage + '%');
+           
+         partialPercent = Math.round(percentage * .25) + 75;
+         triggerEvent('viewer.progress', {'percent': partialPercent});
          
       },
       function(xhr) {
@@ -996,20 +1256,37 @@ function CameraDollyControl(camera, rendererElement, options) {
     
   }
   
-  function storeTexture(texture, filename) {
+  /**
+    @private
+    @param {THREE.Texture} texture - THREE.js texture object
+    @param {string} filename - name to save the texture with
+  */
+  function storeTexture(texture, name) {
   
-    texture.name = filename;
+    texture.name = name;
     textures.push(texture);
     
   }
   
-  function updateTexture(texture, mesh) {
+  /**
+    @private
+    @param {THREE.Texture} texture - THREE.js texture object
+    @param {THREE.Mesh} mesh - THREE.js mesh object
+  */
+  function renderTexture(texture) {
   
-    texture.needsUpdate = true;
-    mesh.material.map = texture;
+    for (var i = 0; i < meshes.length; i++){
+      var mesh = meshes[i];
+      texture.needsUpdate = true;
+      mesh.material.map = texture;
+    }
     
   }
   
+  /**
+    @private
+    @param {Object} element - HTML element selected with jQuery
+  */
   function debounceResize(element) {
   
     var debounce = _.debounce(resizeRenderer, 200, {leading: true});
@@ -1017,15 +1294,20 @@ function CameraDollyControl(camera, rendererElement, options) {
     
   }
   
+  /**
+    @private
+    @param {Object} element - HTML element selected with jQuery
+  */
   function resizeRenderer(element) {
   
-     canvasWidth = rendererElement.width();
+     canvasWidth = element.width();
      canvasHeight = canvasWidth / settings.aspectRatio;
      renderer.setSize(canvasWidth, canvasHeight);
      camera.updateProjectionMatrix();
      
   }
   
+  /** @private */
   function render() {
   
     if (requestFrame) {
@@ -1038,27 +1320,31 @@ function CameraDollyControl(camera, rendererElement, options) {
     
   }
   
-  function restartRender() {
+  /** @private */
+  function restart() {
   
     requestFrame = true;
     render();
     
   }
   
-  function haltRender() {
+  /** @private */
+  function halt() {
   
     requestFrame = false;
     
   }
   
-  function onMouseDown(event) {
+  /** @private */
+  function onMouseDown() {
   
      element.css('cursor', '-webkit-grabbing');
      element.css('cursor', 'grabbing');
      
    }
    
-   function onMouseUp(event) {
+   /** @private */
+   function onMouseUp() {
    
      mouseDown = false;
      element.css('cursor', '-webkit-grab');
@@ -1066,13 +1352,19 @@ function CameraDollyControl(camera, rendererElement, options) {
      
    }
    
-   function onMouseOut(event) {
+   /** @private */
+   function onMouseOut() {
    
      element.css('cursor', '-webkit-grab');
      element.css('cursor', 'grab');
      
    }
   
+  /**
+    @private
+    @param {string} eventName - name the event
+    @param {Object} detail - data object to be passed to the listener
+  */
   function triggerEvent(eventName, detail) {
   
     try {
@@ -1105,6 +1397,11 @@ function CameraDollyControl(camera, rendererElement, options) {
     
   }
   
+  /**
+    @private
+    @param {number} deg - degrees
+    @return {number} radians
+  */
   function radians(deg) {
   
     var rad = deg * (Math.PI/180);
@@ -1112,6 +1409,10 @@ function CameraDollyControl(camera, rendererElement, options) {
     
   }
    
+  /**
+   create a Viewer
+   @function
+   */
   this.create = function() {
   
     $.extend(settings, options);
@@ -1133,65 +1434,55 @@ function CameraDollyControl(camera, rendererElement, options) {
     
   };
   
-  this.toggleModels = function() {
+  /**
+   Display a saved texture using the name it was saved with.
+   @function
+   @param {string} name - name the texture was saved with
+   */
+  this.displayTexture = function(name) {
   
-    var plusModel = getMeshByName('artemix3XLMesh.js');
-    var straightModel = getMeshByName('artemixXSMesh.js');
-    
-    if (straightModel.visible == true) {
-    
-      plusModel.visible = true;
-      straightModel.visible = false;
-      
-    } else {
-    
-      straightModel.visible = true;
-      plusModel.visible = false;
-      
-    }
-    
-    triggerEvent('viewer.togglemodel');
-    
-  };
-  
-  this.switchTexture = function(name) {
-  
-    for (var i = 0; i < scene.children.length; i++) {
-    
-      object = scene.children[i];
-      
-      if (object.type == 'Mesh') {
-      
-        updateTexture(getTextureByName(name), object);
-        
-      }
-      
-    }
+    renderTexture(getTextureByName(name));
     
     triggerEvent('viewer.switchtexture');
     
   };
   
-  this.useLocalTexture = function(image, filename) {
+  /**
+   Create and save a texture using an HTML image or canvas element, then
+   display that texture on the current model.
+   @function
+   @param {Object} image - HTML image or canvas element
+   @param {string} name - name to save the texture as
+   */
+  this.displayImageAsTexture = function(image, name) {
   
     texture = new THREE.Texture(image);
-    storeTexture(texture, filename);
-    self.switchTexture(filename);
+    storeTexture(texture, name);
+    self.displayTexture(name);
     
     triggerEvent('viewer.switchtexture');
     
   };
   
-  this.addLocalTexture = function(image, filename) {
+  /**
+   Create and save a texture using an HTML image or canvas element.
+   @function
+   @param {Object} image - HTML image or canvas element
+   @param {string} filename - name to save the texture as
+   */
+  this.addTextureFromImage = function(image, name) {
   
     texture = new THREE.Texture(image);
-    storeTexture(texture, filename);
+    storeTexture(texture, name);
     
   };
   
+  /**
+    Display a model by size name, "XS" or "3XL"
+    @function
+    @param {string} size - accepts "XS" or "3XL"
+  */
   this.displayModel = function(size) {
-  
-    // use size names "XS" or "3XL"
     
     var plusModel = getMeshByName('artemix3XLMesh.js');
     var straightModel = getMeshByName('artemixXSMesh.js');
@@ -1211,7 +1502,11 @@ function CameraDollyControl(camera, rendererElement, options) {
     triggerEvent('viewer.togglemodel');
     
   };
-   
+  
+  /**
+    Bind listeners for the mouse and touch controls
+    @function
+  */
   this.createControls = function() {
   
     cameraControl.registerControls();
@@ -1219,6 +1514,10 @@ function CameraDollyControl(camera, rendererElement, options) {
     
   };
   
+  /**
+    Remove listeners for the mouse and touch controls
+    @function
+  */
   this.unbindControls = function() {
   
     cameraControl.unbindControls();
@@ -1226,24 +1525,39 @@ function CameraDollyControl(camera, rendererElement, options) {
     
   };
   
+  /**
+    Start render and bind controls
+    @function
+  */
   this.start = function() {
   
-    restartRender();
+    restart();
     self.createControls();
     
   };
   
+  /**
+    Stop render and remove controls
+    @function
+  */
   this.stop = function() {
   
-    haltRender();
+    halt();
     self.unbindControls();
     
   };
   
+  /**
+    Add an array of textures
+    @function
+  */
   this.addTextures = loadTextures;
-  this.restart = restartRender;
-  this.halt = haltRender;
-  this.changeLighting = changeLighting;
+  
+  /**
+    Change lighting set
+    @function
+  */
+  this.useLighting = useLighting;
   
   this.create();
   

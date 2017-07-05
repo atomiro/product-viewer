@@ -34,24 +34,25 @@
         isRendering = true;
       });
       
-      $('.switch').click( function(){
-        viewer.toggleModels();
+      $('.switch-model').click( function(){
+        var size = $(this).data('size');
+        viewer.displayModel(size);
       });
       
       $('.show-texture').click( function(){
         textureFile = $(this).data('texture');
         lighting = $(this).data('lighting');
-        viewer.switchTexture(textureFile);
-        viewer.changeLighting(lighting);
+        viewer.displayTexture(textureFile);
+        viewer.useLighting(lighting);
       });
       
       $('.render-control').click( function(){
         if (isRendering) {
-          viewer.halt();
+          viewer.stop();
           isRendering = false;
           $(this).text("Start");
         } else {
-          viewer.restart();
+          viewer.start();
           isRendering = true;
           $(this).text("Stop");
         }
@@ -101,7 +102,8 @@
   <div class="preview"></div>
 
   <div class="controls">
-   <button class="switch">Switch Model</button>
+   <button class="switch-model" data-size="XS">XS Model</button>
+   <button class="switch-model" data-size="3XL">3XL Model</button>
    <button class="show-texture" 
      data-texture="assets/Azalea-V1S13-01.jpg" 
      data-lighting ="mid">Azalea</button>

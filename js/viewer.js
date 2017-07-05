@@ -35,11 +35,11 @@ function Viewer(initTexture, element, options) {
   var camera;
   var renderer;
   
-  var meshes = [];
-  
-  var meshControl;
   var cameraControl;
   
+  var meshes = [];
+  var meshControl;
+    
   var textures = [];
   var textureManager;
   
@@ -56,22 +56,22 @@ function Viewer(initTexture, element, options) {
   
   var self = this;
   
-  /** @private */
+  /** 
+    @private 
+    load scene created with the THREE.js Scene Editor
+  */
   function loadScene() {
-  
-    // load scene json file created with three.js editor
-    
-    var sceneFile = settings.sceneFile;
+      
+    var file = settings.sceneFile;
     var objloader = new THREE.ObjectLoader();
         
-    objloader.load(sceneFile,
-      setup,
+    objloader.load(file,
+      init,
       function(xhr) {
       
         var percent = Math.round(xhr.loaded / xhr.total * 100);
         var partialPercent = Math.round(xhr.loaded / xhr.total * 75);
         
-        console.log('Scene ' + sceneFile + ': ' + percent + '%');
         triggerEvent('viewer.progress', {'percent': partialPercent});
         
       },
@@ -87,11 +87,12 @@ function Viewer(initTexture, element, options) {
     @private
     @param {Object} sceneFile - THREE.js Scene json object
   */
-  function setup(sceneFile) {
+  function init(file) {
   
     renderer = new THREE.WebGLRenderer({alpha: true, antialias: true});
     renderer.setPixelRatio(DEVICE_PIXEL_RATIO);
     renderer.setSize(canvasWidth, canvasHeight);
+    
     rendererElement.append(renderer.domElement);
     
     if (settings.sceneBackgroundColor == 'transparent') {
@@ -104,17 +105,17 @@ function Viewer(initTexture, element, options) {
       
       if (bgcolor) {
       
-        sceneFile.background = bgcolor;
+        file.background = bgcolor;
         
       } else {
       
-        sceneFile.background = new THREE.Color(0x000000);
+        file.background = new THREE.Color(0x000000);
         
       }
        
     }
       
-    scene = sceneFile;
+    scene = file;
     
     initManager = new THREE.LoadingManager();
     
@@ -169,9 +170,11 @@ function Viewer(initTexture, element, options) {
   
     if (initialized == false) {
     
-        setupMeshes();
-        setupCamera();
-        changeLighting('mid');
+        initMeshes();
+        initCamera();
+        
+        useLighting('mid');
+        
         render();
         
         triggerEvent('viewer.loaded');
@@ -183,7 +186,7 @@ function Viewer(initTexture, element, options) {
   }
   
   /** @private */
-  function setupCamera() {
+  function initCamera() {
   
     camera = new THREE.PerspectiveCamera(settings.fov,
       settings.aspectRatio, CAM_NEAR_PLANE, CAM_FAR_PLANE);
@@ -207,7 +210,7 @@ function Viewer(initTexture, element, options) {
   }
   
   /** @private */
-  function setupMeshes() {
+  function initMeshes() {
     
     for (var i = 0; i < scene.children.length; i++) {
     
@@ -216,7 +219,6 @@ function Viewer(initTexture, element, options) {
         if (object.type == 'Mesh') {
         
           meshes.push(object);
-          console.log(object.name);
           object.material.map = getTextureByName(initTexture);
           
           if (object.name == 'artemix3XLMesh.js') {
@@ -249,7 +251,7 @@ function Viewer(initTexture, element, options) {
     @private
     @param {string} style - "Light", "Dark" or "Mid"
   */
-  function changeLighting(style) {
+  function useLighting(style) {
   
     // light or dark style
     
@@ -347,13 +349,13 @@ function Viewer(initTexture, element, options) {
   
   /**
     @private
-    @param {Array|string} textureFileArray - Array of paths
+    @param {Array|string} paths - Array of file paths
   */
-  function loadTextures(textureFileArray) {
+  function loadTextures(paths) {
   
-    for (var i = 0; i < textureFileArray.length; i++) {
+    for (var i = 0; i < paths.length; i++) {
     
-        loadTexture(textureFileArray[i], textureManager);
+        loadTexture(paths[i], textureManager);
         
      }
      
@@ -361,25 +363,26 @@ function Viewer(initTexture, element, options) {
   
   /**
     @private
-    @param {string} textureFileName - path to texture
-    @param {THREE.LoadingManager} manager - THREE.js loading manager
-    @param {string} newName - override current file name when
+    @param {string} path - file path to texture
+    @param {string} name - override current file name when
     saving it as a texture
+    @param {THREE.LoadingManager} manager - THREE.js loading manager
   */
-  function loadTexture(textureFileName, manager, newName) {
+  function loadTexture(path, manager, name) {
   
     textureLoader = new THREE.TextureLoader(manager);
     
-    textureLoader.load(textureFileName,
+    textureLoader.load(
+      path,
       function(texture) {
       
-         if (newName) {
+         if (name) {
          
-            storeTexture(texture, newName);
+            storeTexture(texture, name);
             
           } else {
           
-            storeTexture(texture, textureFileName);
+            storeTexture(texture, path);
             
           }
           
@@ -387,7 +390,7 @@ function Viewer(initTexture, element, options) {
       function(xhr) {
          
          var percentage = Math.round(xhr.loaded / xhr.total * 100);
-         console.log('Texture ' + textureFileName + ' ' + percentage + '%');
+         console.log('Texture ' + path + ' ' + percentage + '%');
            
          partialPercent = Math.round(percentage * .25) + 75;
          triggerEvent('viewer.progress', {'percent': partialPercent});
@@ -407,9 +410,9 @@ function Viewer(initTexture, element, options) {
     @param {THREE.Texture} texture - THREE.js texture object
     @param {string} filename - name to save the texture with
   */
-  function storeTexture(texture, filename) {
+  function storeTexture(texture, name) {
   
-    texture.name = filename;
+    texture.name = name;
     textures.push(texture);
     
   }
@@ -419,10 +422,13 @@ function Viewer(initTexture, element, options) {
     @param {THREE.Texture} texture - THREE.js texture object
     @param {THREE.Mesh} mesh - THREE.js mesh object
   */
-  function updateTexture(texture, mesh) {
+  function renderTexture(texture) {
   
-    texture.needsUpdate = true;
-    mesh.material.map = texture;
+    for (var i = 0; i < meshes.length; i++){
+      var mesh = meshes[i];
+      texture.needsUpdate = true;
+      mesh.material.map = texture;
+    }
     
   }
   
@@ -464,7 +470,7 @@ function Viewer(initTexture, element, options) {
   }
   
   /** @private */
-  function restartRender() {
+  function restart() {
   
     requestFrame = true;
     render();
@@ -472,7 +478,7 @@ function Viewer(initTexture, element, options) {
   }
   
   /** @private */
-  function haltRender() {
+  function halt() {
   
     requestFrame = false;
     
@@ -578,48 +584,13 @@ function Viewer(initTexture, element, options) {
   };
   
   /**
-   Toogle between straight and curvy models
-   @function
-   */
-  this.toggleModels = function() {
-  
-    var plusModel = getMeshByName('artemix3XLMesh.js');
-    var straightModel = getMeshByName('artemixXSMesh.js');
-    
-    if (straightModel.visible == true) {
-    
-      plusModel.visible = true;
-      straightModel.visible = false;
-      
-    } else {
-    
-      straightModel.visible = true;
-      plusModel.visible = false;
-      
-    }
-    
-    triggerEvent('viewer.togglemodel');
-    
-  };
-  
-  /**
    Display a saved texture using the name it was saved with.
    @function
    @param {string} name - name the texture was saved with
    */
-  this.switchTexture = function(name) {
+  this.displayTexture = function(name) {
   
-    for (var i = 0; i < scene.children.length; i++) {
-    
-      object = scene.children[i];
-      
-      if (object.type == 'Mesh') {
-      
-        updateTexture(getTextureByName(name), object);
-        
-      }
-      
-    }
+    renderTexture(getTextureByName(name));
     
     triggerEvent('viewer.switchtexture');
     
@@ -630,13 +601,13 @@ function Viewer(initTexture, element, options) {
    display that texture on the current model.
    @function
    @param {Object} image - HTML image or canvas element
-   @param {string} filename - name to save the texture as
+   @param {string} name - name to save the texture as
    */
-  this.useLocalTexture = function(image, filename) {
+  this.displayImageAsTexture = function(image, name) {
   
     texture = new THREE.Texture(image);
-    storeTexture(texture, filename);
-    self.switchTexture(filename);
+    storeTexture(texture, name);
+    self.displayTexture(name);
     
     triggerEvent('viewer.switchtexture');
     
@@ -648,10 +619,10 @@ function Viewer(initTexture, element, options) {
    @param {Object} image - HTML image or canvas element
    @param {string} filename - name to save the texture as
    */
-  this.addLocalTexture = function(image, filename) {
+  this.addTextureFromImage = function(image, name) {
   
     texture = new THREE.Texture(image);
-    storeTexture(texture, filename);
+    storeTexture(texture, name);
     
   };
   
@@ -709,7 +680,7 @@ function Viewer(initTexture, element, options) {
   */
   this.start = function() {
   
-    restartRender();
+    restart();
     self.createControls();
     
   };
@@ -720,7 +691,7 @@ function Viewer(initTexture, element, options) {
   */
   this.stop = function() {
   
-    haltRender();
+    halt();
     self.unbindControls();
     
   };
@@ -732,22 +703,10 @@ function Viewer(initTexture, element, options) {
   this.addTextures = loadTextures;
   
   /**
-    Start render
-    @function
-  */
-  this.restart = restartRender;
-  
-  /**
-    Stop render
-    @function
-  */
-  this.halt = haltRender;
-  
-  /**
     Change lighting set
     @function
   */
-  this.changeLighting = changeLighting;
+  this.useLighting = useLighting;
   
   this.create();
   

@@ -45,6 +45,8 @@ function CameraDollyControl(camera, rendererElement, options) {
 
   var mouseIn = false;
   
+  var mouseDown = false;
+  
   var isAnimating = false;
   
   var zoomingOut = false;

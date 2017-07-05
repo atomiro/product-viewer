@@ -24,7 +24,7 @@ module.exports = function(grunt) {
     },
     
      eslint: {
-        target: ['js/*.js']
+        target: ['js/*.js'],
     },
     
     jsdoc : {
