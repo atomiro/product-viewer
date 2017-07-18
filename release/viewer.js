@@ -422,7 +422,11 @@ function CameraDollyControl(camera, rendererElement, options) {
   return this;
 
 }
-;/**
+;Number.isInteger = Number.isInteger || function(value) {
+  return typeof value === 'number' && 
+    isFinite(value) && 
+    Math.floor(value) === value;
+};;/**
   Rotate multiple meshes using mouse or touch controls.
   @param {Array} meshes - Array of THREE.js Mesh Objects
   @param {Object} rendererElement - HTML element selected with jQuery
@@ -1338,8 +1342,8 @@ function Viewer(initTexture, element, options) {
   /** @private */
   function onMouseDown() {
   
-     element.css('cursor', '-webkit-grabbing');
-     element.css('cursor', 'grabbing');
+     element.addClass("viewer-interacting");
+     element.removeClass("viewer-interact");
      
    }
    
@@ -1347,16 +1351,16 @@ function Viewer(initTexture, element, options) {
    function onMouseUp() {
    
      mouseDown = false;
-     element.css('cursor', '-webkit-grab');
-     element.css('cursor', 'grab');
+     element.removeClass("viewer-interacting");
+     element.addClass("viewer-interact");
      
    }
    
    /** @private */
    function onMouseOut() {
    
-     element.css('cursor', '-webkit-grab');
-     element.css('cursor', 'grab');
+     element.removeClass("viewer-interacting");
+     element.addClass("viewer-interact");
      
    }
   
@@ -1408,6 +1412,17 @@ function Viewer(initTexture, element, options) {
     return rad;
     
   }
+  
+  /** private */
+  function mouseFeedbackListeners() {
+  
+    element.addClass("viewer-interact");
+   
+    element.mousedown(onMouseDown);
+    element.mouseup(onMouseUp);
+    element.mouseleave(onMouseOut);
+    
+  }
    
   /**
    create a Viewer
@@ -1425,12 +1440,7 @@ function Viewer(initTexture, element, options) {
       
     });
     
-    element.mousedown(onMouseDown);
-    element.mouseup(onMouseUp);
-    element.mouseleave(onMouseOut);
-    
-    element.css('cursor', '-webkit-grab');
-    element.css('cursor', 'grab');
+    mouseFeedbackListeners();
     
   };
   
