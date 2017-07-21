@@ -22,6 +22,8 @@ function CameraDollyControl(camera, rendererElement, options) {
     
   };
   
+  var self = this;
+  
   /** @member {number} */
   this.panLockAt;
 
@@ -331,11 +333,12 @@ function CameraDollyControl(camera, rendererElement, options) {
       camera.position.y = cameraHeight;
       camera.position.z = cameraDist;
       camera.lookAt(new THREE.Vector3(0, cameraHeight, 0));
-      
+    
     }
     
     if (progress >= 1) {
     
+      console.log('pos animation', camera.position);
       isAnimating = false;
       progress = 0;
       
@@ -418,6 +421,20 @@ function CameraDollyControl(camera, rendererElement, options) {
    @function
    */
   this.unbindControls = unbindControls;
+  
+  this.centerOnObject = function(object) {
+  
+    object.geometry.computeBoundingBox();
+    var boundingBox = object.geometry.boundingBox;
+    var center = boundingBox.center().y * .13;
+    
+    initHeight = center;
+    cameraHeight = center;
+    
+    camera.position.y = center;
+    camera.lookAt(new THREE.Vector3(0, center, 0));
+    
+  }
   
   return this;
 

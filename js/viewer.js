@@ -192,20 +192,18 @@ function Viewer(initTexture, element, options) {
     
     camera.position.z = settings.cameraXPosition;
     
-    var center = meshes[1].geometry.boundingBox.center().y * .13;
-    camera.position.y = center;
-    camera.lookAt(new THREE.Vector3(0, center, 0));
-    
     var cameraSettings = {
     
-      maxZoomDistance: settings.cameraXPosition,
+      maxZoom: settings.cameraXPosition,
       maxCameraHeight: meshes[1].geometry.boundingBox.size().y * .115,
       
     };
     
     cameraControl = new CameraDollyControl(camera,
       rendererElement, cameraSettings);
-
+      
+    cameraControl.centerOnObject(meshes[0]); 
+    
   }
   
   /** @private */
