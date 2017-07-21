@@ -423,10 +423,13 @@ function CameraDollyControl(camera, rendererElement, options) {
 
 }
 ;Number.isInteger = Number.isInteger || function(value) {
-  return typeof value === 'number' && 
-    isFinite(value) && 
+
+  return typeof value === 'number' &&
+    isFinite(value) &&
     Math.floor(value) === value;
-};;/**
+    
+};
+;/**
   Rotate multiple meshes using mouse or touch controls.
   @param {Array} meshes - Array of THREE.js Mesh Objects
   @param {Object} rendererElement - HTML element selected with jQuery
@@ -911,8 +914,8 @@ function Viewer(initTexture, element, options) {
   
   var self = this;
   
-  /** 
-    @private 
+  /**
+    @private
     load scene created with the THREE.js Scene Editor
   */
   function loadScene() {
@@ -924,7 +927,6 @@ function Viewer(initTexture, element, options) {
       init,
       function(xhr) {
       
-        var percent = Math.round(xhr.loaded / xhr.total * 100);
         var partialPercent = Math.round(xhr.loaded / xhr.total * 75);
         
         triggerEvent('viewer.progress', {'percent': partialPercent});
@@ -940,7 +942,7 @@ function Viewer(initTexture, element, options) {
   
   /**
     @private
-    @param {Object} sceneFile - THREE.js Scene json object
+    @param {Object} file - THREE.js Scene json object
   */
   function init(file) {
   
@@ -1219,9 +1221,9 @@ function Viewer(initTexture, element, options) {
   /**
     @private
     @param {string} path - file path to texture
+    @param {THREE.LoadingManager} manager - THREE.js loading manager
     @param {string} name - override current file name when
     saving it as a texture
-    @param {THREE.LoadingManager} manager - THREE.js loading manager
   */
   function loadTexture(path, manager, name) {
   
@@ -1263,7 +1265,7 @@ function Viewer(initTexture, element, options) {
   /**
     @private
     @param {THREE.Texture} texture - THREE.js texture object
-    @param {string} filename - name to save the texture with
+    @param {string} name - name to save the texture with
   */
   function storeTexture(texture, name) {
   
@@ -1279,10 +1281,12 @@ function Viewer(initTexture, element, options) {
   */
   function renderTexture(texture) {
   
-    for (var i = 0; i < meshes.length; i++){
+    for (var i = 0; i < meshes.length; i++) {
+    
       var mesh = meshes[i];
       texture.needsUpdate = true;
       mesh.material.map = texture;
+      
     }
     
   }
@@ -1342,8 +1346,8 @@ function Viewer(initTexture, element, options) {
   /** @private */
   function onMouseDown() {
   
-     element.addClass("viewer-interacting");
-     element.removeClass("viewer-interact");
+     element.addClass('viewer-interacting');
+     element.removeClass('viewer-interact');
      
    }
    
@@ -1351,16 +1355,16 @@ function Viewer(initTexture, element, options) {
    function onMouseUp() {
    
      mouseDown = false;
-     element.removeClass("viewer-interacting");
-     element.addClass("viewer-interact");
+     element.removeClass('viewer-interacting');
+     element.addClass('viewer-interact');
      
    }
    
    /** @private */
    function onMouseOut() {
    
-     element.removeClass("viewer-interacting");
-     element.addClass("viewer-interact");
+     element.removeClass('viewer-interacting');
+     element.addClass('viewer-interact');
      
    }
   
@@ -1416,7 +1420,7 @@ function Viewer(initTexture, element, options) {
   /** private */
   function mouseFeedbackListeners() {
   
-    element.addClass("viewer-interact");
+    element.addClass('viewer-interact');
    
     element.mousedown(onMouseDown);
     element.mouseup(onMouseUp);
@@ -1478,7 +1482,7 @@ function Viewer(initTexture, element, options) {
    Create and save a texture using an HTML image or canvas element.
    @function
    @param {Object} image - HTML image or canvas element
-   @param {string} filename - name to save the texture as
+   @param {string} name - name to save the texture as
    */
   this.addTextureFromImage = function(image, name) {
   
