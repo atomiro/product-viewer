@@ -436,6 +436,49 @@ function CameraDollyControl(camera, rendererElement, options) {
     
   }
   
+  this.focus = function(object) {
+  
+    // canvas dimensions
+    //var displayWidth = 500;
+    //var displayHeight = 625;
+    
+    // fov in radians 
+    var fov = camera.fov * (Math.PI / 180);
+    //var near = camera.near;
+    //var far = camera.far;
+    
+    //var objLoc = object.getWorldPosition();
+    //var camLoc = camera.getWorldPosition(); 
+    
+    object.geometry.computeBoundingBox();
+    
+    console.log("Object", object.name);
+    
+    var bBox = object.geometry.boundingBox;
+    
+    console.log("bounding box", bBox);
+    
+    var center = bBox.center();
+    var size = bBox.size();
+    
+    var maxDimension = Math.max(size.x, size.y, size.z); 
+    
+    console.log("max dimension", maxDimension);
+    
+    console.log("center", center);
+    console.log("size", size);
+    
+    var distance = Math.abs(maxDimension / 4 * Math.tan( fov * 2 ));
+    
+    console.log("FOCUS", distance);
+    
+    distance *= 1.3;
+    
+    camera.position.z = distance;
+    cameraDist = camera.position.z;
+      
+  }
+  
   return this;
 
 }
@@ -1078,6 +1121,8 @@ function Viewer(initTexture, element, options) {
       rendererElement, cameraSettings);
       
     cameraControl.centerOnObject(meshes[0]); 
+    
+    cameraControl.focus(meshes[0]);
     
   }
   

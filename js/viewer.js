@@ -204,6 +204,8 @@ function Viewer(initTexture, element, options) {
       
     cameraControl.centerOnObject(meshes[0]); 
     
+    cameraControl.focus(meshes[0]);
+    
   }
   
   /** @private */
