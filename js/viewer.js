@@ -202,8 +202,6 @@ function Viewer(initTexture, element, options) {
     cameraControl = new CameraDollyControl(camera,
       rendererElement, cameraSettings);
       
-    cameraControl.centerOnObject(meshes[0]); 
-    
     cameraControl.focus(meshes[0]);
     
   }
@@ -647,11 +645,13 @@ function Viewer(initTexture, element, options) {
     
       straightModel.visible = true;
       plusModel.visible = false;
+      cameraControl.focus(straightModel);
       
     } else if (size == '3XL') {
     
       plusModel.visible = true;
       straightModel.visible = false;
+      cameraControl.focus(plusModel);
       
     }
     

@@ -307,6 +307,23 @@ function CameraDollyControl(camera, rendererElement, options) {
     
   }
   
+  /** @private 
+  @param {THREE.MeshObject} object 
+  */
+  function centerOnObject(object) {
+  
+    object.geometry.computeBoundingBox();
+    var boundingBox = object.geometry.boundingBox;
+    var center = boundingBox.center().y * .13;
+    
+    initHeight = center;
+    cameraHeight = center;
+    
+    camera.position.y = center;
+    camera.lookAt(new THREE.Vector3(0, center, 0));
+    
+  }
+  
   /**
     @private
     @param {number} step - step number (between 0 and 1) for incrementing a lerp
@@ -338,7 +355,6 @@ function CameraDollyControl(camera, rendererElement, options) {
     
     if (progress >= 1) {
     
-      console.log('pos animation', camera.position);
       isAnimating = false;
       progress = 0;
       
@@ -422,60 +438,34 @@ function CameraDollyControl(camera, rendererElement, options) {
    */
   this.unbindControls = unbindControls;
   
-  this.centerOnObject = function(object) {
-  
-    object.geometry.computeBoundingBox();
-    var boundingBox = object.geometry.boundingBox;
-    var center = boundingBox.center().y * .13;
-    
-    initHeight = center;
-    cameraHeight = center;
-    
-    camera.position.y = center;
-    camera.lookAt(new THREE.Vector3(0, center, 0));
-    
-  }
-  
+  /** Position camera so that object fits the canvas
+  @param {THREE.MeshObject} object - THREE Mesh Object 
+  @function
+  */
   this.focus = function(object) {
   
-    // canvas dimensions
-    //var displayWidth = 500;
-    //var displayHeight = 625;
+    centerOnObject(object);
     
     // fov in radians 
     var fov = camera.fov * (Math.PI / 180);
-    //var near = camera.near;
-    //var far = camera.far;
-    
-    //var objLoc = object.getWorldPosition();
-    //var camLoc = camera.getWorldPosition(); 
     
     object.geometry.computeBoundingBox();
-    
-    console.log("Object", object.name);
-    
+        
     var bBox = object.geometry.boundingBox;
-    
-    console.log("bounding box", bBox);
-    
-    var center = bBox.center();
+        
     var size = bBox.size();
+    var center = bBox.center();
     
     var maxDimension = Math.max(size.x, size.y, size.z); 
-    
-    console.log("max dimension", maxDimension);
-    
-    console.log("center", center);
-    console.log("size", size);
-    
+            
     var distance = Math.abs(maxDimension / 4 * Math.tan( fov * 2 ));
-    
-    console.log("FOCUS", distance);
-    
-    distance *= 1.3;
+        
+    distance *= 1.33;
     
     camera.position.z = distance;
-    cameraDist = camera.position.z;
+    
+    cameraDist = distance;
+    settings.maxZoom = distance;
       
   }
   
