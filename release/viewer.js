@@ -439,6 +439,7 @@ function CameraDollyControl(camera, rendererElement, options) {
   this.unbindControls = unbindControls;
   
   /** Position camera so that object fits the canvas
+  @param {THREE.MeshObject} object - THREE Mesh Object 
   @function
   */
   this.focus = function(object) {
@@ -930,6 +931,7 @@ function Viewer(initTexture, element, options) {
     specular3XL: 'assets/maps/viewer_3XL_2k_specular.jpg',
     lightSpecColor: 0x202020,
     darkSpecColor: 0xa5a4a6,
+    debug: false
     
   };
   
@@ -1033,9 +1035,11 @@ function Viewer(initTexture, element, options) {
     
     initManager.onProgress = function(url, itemsLoaded, itemsTotal) {
     
-      console.log('INIT Loading file: ' + url +
+      if (settings.debug){
+        console.log('INIT Loading file: ' + url +
         '.\nLoaded ' + itemsLoaded +
         ' of ' + itemsTotal + ' files.');
+      }
       
     };
     
@@ -1050,15 +1054,19 @@ function Viewer(initTexture, element, options) {
     
     textureManager.onProgress = function(url, itemsLoaded, itemsTotal) {
     
-      console.log('Loading file: ' + url +
+      if (settings.debug){
+        console.log('Loading file: ' + url +
        '.\nLoaded ' + itemsLoaded + ' of '
        + itemsTotal + ' files.');
+      } 
      
     };
     
     textureManager.onLoad = function() {
     
-       // console.log("texture added");
+      if (settings.debug){
+        console.log("texture added");
+      }
        
     };
     
@@ -1294,10 +1302,15 @@ function Viewer(initTexture, element, options) {
       function(xhr) {
          
          var percentage = Math.round(xhr.loaded / xhr.total * 100);
-         console.log('Texture ' + path + ' ' + percentage + '%');
            
          partialPercent = Math.round(percentage * .25) + 75;
          triggerEvent('viewer.progress', {'percent': partialPercent});
+         
+         if (settings.debug){
+         
+           console.log('Texture ' + path + ' ' + percentage + '%');
+         
+         }
          
       },
       function(xhr) {
