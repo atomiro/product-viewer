@@ -1,9 +1,13 @@
+/**
+  Rotate multiple meshes using mouse or touch controls.
+  @param {Array} meshes - Array of THREE.js Mesh Objects
+  @param {Object} rendererElement - HTML element selected with jQuery
+  @param {Object} options - options object
+  @return {MeshControl}
+  @constructor
+*/
 function MeshControl(meshes, rendererElement, options) {
-
-//
-// Rotate multiple meshes by clicking and dragging side to side
-//
-
+   
    settings = {
    
      mouseSpeedFactor: .7,
@@ -29,6 +33,9 @@ function MeshControl(meshes, rendererElement, options) {
    
    init();
    
+   /**
+     @private
+   */
    function init() {
    
      $.extend(settings, options);
@@ -36,8 +43,11 @@ function MeshControl(meshes, rendererElement, options) {
      registerControls();
      
    }
-   
-  function registerControls() {
+  
+   /**
+     @private
+   */
+   function registerControls() {
   
      rendererElement.mousedown(onMouseDown);
      rendererElement.mouseup(onMouseUp);
@@ -47,9 +57,12 @@ function MeshControl(meshes, rendererElement, options) {
      
      rendererElement[0].addEventListener('touchmove', onTouchMove, false);
      
-  }
-  
-  function unbindControls() {
+   }
+   
+   /**
+     @private
+   */
+   function unbindControls() {
   
      rendererElement.off('mousedown', onMouseDown);
      rendererElement.off('mouseup', onMouseUp);
@@ -57,9 +70,13 @@ function MeshControl(meshes, rendererElement, options) {
      
      rendererElement[0].removeEventListener('touchmove', onTouchMove);
      
-  }
+   }
    
-  function onMouseMove(event) {
+   /**
+     @private
+     @param {event} event - mouse/pointer event
+   */
+   function onMouseMove(event) {
   
      updateMouseMoveDelta(event);
      
@@ -73,31 +90,47 @@ function MeshControl(meshes, rendererElement, options) {
      
    }
    
-   function onMouseDown(event) {
+   /**
+     @private
+   */
+   function onMouseDown() {
    
      mouseDown = true;
      
    }
    
-   function onMouseUp(event) {
+   /**
+     @private
+   */
+   function onMouseUp() {
    
      mouseDown = false;
      
    }
    
-   function onMouseIn(event) {
+   /**
+     @private
+   */
+   function onMouseIn() {
    
       mouseIn = true;
       
    }
    
-   function onMouseOut(event) {
+   /**
+     @private
+   */
+   function onMouseOut() {
    
      mouseIn = false;
      mouseDown = false;
      
    }
    
+   /**
+     @private
+     @param {event} event - touch/pointer event
+   */
    function onTouchMove(event) {
    
      if (event.touches.length == 1) {
@@ -106,7 +139,8 @@ function MeshControl(meshes, rendererElement, options) {
        
           event.preventDefault();
           
-          var angle = (touchTracker.speedX * Math.PI / 180) * settings.touchSpeedFactor;
+          var angle = (touchTracker.speedX * Math.PI / 180)
+            * settings.touchSpeedFactor;
             
           rotateTo(angle);
           
@@ -115,7 +149,11 @@ function MeshControl(meshes, rendererElement, options) {
      }
      
    }
-
+   
+   /**
+     @private
+     @param {number} angle - in radians
+   */
    function rotateTo(angle) {
      
      var axisOfRotation = new THREE.Vector3(0, 1, 0);
@@ -128,6 +166,10 @@ function MeshControl(meshes, rendererElement, options) {
      
    }
    
+   /**
+     @private
+     @param {event} event - mouse/pointer event
+   */
    function updateMouseMoveDelta(event) {
    
         mouseDeltaX = 0;
@@ -145,7 +187,16 @@ function MeshControl(meshes, rendererElement, options) {
         
    }
    
+   /**
+   Register event listeners to the rendererElement
+   @function
+   */
    this.registerControls = registerControls;
+   
+   /**
+   Remove event listeners from the rendererElement
+   @function
+   */
    this.unbindControls = unbindControls;
    
    return this;

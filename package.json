@@ -14,7 +14,8 @@
     "grunt-contrib-concat": "^1.0.0",
     "grunt-contrib-uglify": "^2.0.0",
     "grunt-contrib-watch": "^0.6.1",
-    "grunt-eslint": "^19.0.0"
+    "grunt-eslint": "^19.0.0",
+    "grunt-jsdoc": "^2.1.0"
   },
   "eslintConfig": {
     "env": {
@@ -27,6 +28,21 @@
     },
     "extends": "google",
     "rules": {
+      "no-extend-native": 1,
+      "new-cap": [
+        "error",
+        {
+          "capIsNewExceptions": [
+            "Event"
+          ]
+        }
+      ],
+      "no-unused-vars": [
+        "error",
+        {
+          "vars": "local"
+        }
+      ],
       "padded-blocks": [
         1,
         "always"

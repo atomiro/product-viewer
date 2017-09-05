@@ -1,3 +1,11 @@
+/**
+  Viewer creates a 3D render using an initial texture with an html element
+  @param {string} initTexture - path to a texture to initialize with
+  @param {Object} element - HTML element selected with JQuery
+  @param {Object} options - options object
+  @return {Viewer} Viewer
+  @constructor
+*/
 function Viewer(initTexture, element, options) {
 
   var settings = {
@@ -15,6 +23,7 @@ function Viewer(initTexture, element, options) {
     specular3XL: 'assets/maps/viewer_3XL_2k_specular.jpg',
     lightSpecColor: 0x202020,
     darkSpecColor: 0xa5a4a6,
+    debug: false
     
   };
   
@@ -27,38 +36,43 @@ function Viewer(initTexture, element, options) {
   var camera;
   var renderer;
   
-  var meshes = [];
-  
-  var meshControl;
   var cameraControl;
   
+  var meshes = [];
+  var meshControl;
+    
   var textures = [];
   var textureManager;
   
   var rendererElement = element;
+  
   var canvasWidth = rendererElement.width();
   var canvasHeight = canvasWidth / settings.aspectRatio;
-  var DEVICE_PIXEL_RATIO = window.devicePixelRatio ? window.devicePixelRatio : 1;
+  
+  var DEVICE_PIXEL_RATIO = window.devicePixelRatio ?
+    window.devicePixelRatio : 1;
   
   var CAM_FAR_PLANE = 500;
   var CAM_NEAR_PLANE = 0.1;
   
   var self = this;
   
+  /**
+    @private
+    load scene created with the THREE.js Scene Editor
+  */
   function loadScene() {
-  
-    // load scene json file created with three.js editor
-    
-    var sceneFile = settings.sceneFile;
+      
+    var file = settings.sceneFile;
     var objloader = new THREE.ObjectLoader();
         
-    objloader.load(sceneFile,
-      setup,
+    objloader.load(file,
+      init,
       function(xhr) {
       
-        var percent = Math.round(xhr.loaded / xhr.total * 75);
-        console.log('Scene ' + sceneFile + ' percent ' + Math.round(xhr.loaded / xhr.total * 100));
-        triggerEvent('viewer.progress', {'percent': percent});
+        var partialPercent = Math.round(xhr.loaded / xhr.total * 75);
+        
+        triggerEvent('viewer.progress', {'percent': partialPercent});
         
       },
       function(xhr) {
@@ -69,11 +83,16 @@ function Viewer(initTexture, element, options) {
     
   }
   
-  function setup(sceneFile) {
+  /**
+    @private
+    @param {Object} file - THREE.js Scene json object
+  */
+  function init(file) {
   
     renderer = new THREE.WebGLRenderer({alpha: true, antialias: true});
     renderer.setPixelRatio(DEVICE_PIXEL_RATIO);
     renderer.setSize(canvasWidth, canvasHeight);
+    
     rendererElement.append(renderer.domElement);
     
     if (settings.sceneBackgroundColor == 'transparent') {
@@ -86,21 +105,21 @@ function Viewer(initTexture, element, options) {
       
       if (bgcolor) {
       
-        sceneFile.background = bgcolor;
+        file.background = bgcolor;
         
       } else {
       
-        sceneFile.background = new THREE.Color(0x000000);
+        file.background = new THREE.Color(0x000000);
         
       }
        
     }
       
-    scene = sceneFile;
+    scene = file;
     
     initManager = new THREE.LoadingManager();
     
-    initManager.onLoad = function(event) {
+    initManager.onLoad = function() {
     
       initScene();
       
@@ -108,7 +127,11 @@ function Viewer(initTexture, element, options) {
     
     initManager.onProgress = function(url, itemsLoaded, itemsTotal) {
     
-      console.log('INIT Loading file: ' + url + '.\nLoaded ' + itemsLoaded + ' of ' + itemsTotal + ' files.');
+      if (settings.debug){
+        console.log('INIT Loading file: ' + url +
+        '.\nLoaded ' + itemsLoaded +
+        ' of ' + itemsTotal + ' files.');
+      }
       
     };
     
@@ -123,13 +146,19 @@ function Viewer(initTexture, element, options) {
     
     textureManager.onProgress = function(url, itemsLoaded, itemsTotal) {
     
-     // console.log('Loading file: ' + url + '.\nLoaded ' + itemsLoaded + ' of ' + itemsTotal + ' files.');
+      if (settings.debug){
+        console.log('Loading file: ' + url +
+       '.\nLoaded ' + itemsLoaded + ' of '
+       + itemsTotal + ' files.');
+      } 
      
     };
     
-    textureManager.onLoad = function(event) {
+    textureManager.onLoad = function() {
     
-       // console.log("texture added");
+      if (settings.debug){
+        console.log("texture added");
+      }
        
     };
     
@@ -142,13 +171,16 @@ function Viewer(initTexture, element, options) {
 
   }
   
+  /** @private */
   function initScene() {
   
     if (initialized == false) {
     
-        setupMeshes();
-        setupCamera();
-        changeLighting('mid');
+        initMeshes();
+        initCamera();
+        
+        useLighting('mid');
+        
         render();
         
         triggerEvent('viewer.loaded');
@@ -159,28 +191,30 @@ function Viewer(initTexture, element, options) {
       
   }
   
-  function setupCamera() {
+  /** @private */
+  function initCamera() {
   
-    camera = new THREE.PerspectiveCamera(settings.fov, settings.aspectRatio, CAM_NEAR_PLANE, CAM_FAR_PLANE);
+    camera = new THREE.PerspectiveCamera(settings.fov,
+      settings.aspectRatio, CAM_NEAR_PLANE, CAM_FAR_PLANE);
     
     camera.position.z = settings.cameraXPosition;
     
-    var center = meshes[1].geometry.boundingBox.center().y * .13;
-    camera.position.y = center;
-    camera.lookAt(new THREE.Vector3(0, center, 0));
-    
     var cameraSettings = {
     
-      maxZoomDistance: settings.cameraXPosition,
+      maxZoom: settings.cameraXPosition,
       maxCameraHeight: meshes[1].geometry.boundingBox.size().y * .115,
       
     };
     
-    cameraControl = new CameraDollyControl(camera, rendererElement, cameraSettings);
-
+    cameraControl = new CameraDollyControl(camera,
+      rendererElement, cameraSettings);
+      
+    cameraControl.focus(meshes[0]);
+    
   }
   
-  function setupMeshes() {
+  /** @private */
+  function initMeshes() {
     
     for (var i = 0; i < scene.children.length; i++) {
     
@@ -189,7 +223,6 @@ function Viewer(initTexture, element, options) {
         if (object.type == 'Mesh') {
         
           meshes.push(object);
-          console.log(object.name);
           object.material.map = getTextureByName(initTexture);
           
           if (object.name == 'artemix3XLMesh.js') {
@@ -218,7 +251,11 @@ function Viewer(initTexture, element, options) {
     
   }
   
-  function changeLighting(style) {
+  /**
+    @private
+    @param {string} style - "Light", "Dark" or "Mid"
+  */
+  function useLighting(style) {
   
     // light or dark style
     
@@ -268,6 +305,11 @@ function Viewer(initTexture, element, options) {
       
   }
   
+  /**
+    @private
+    @param {string} name - name texture was saved with
+    @return {THREE.Texture}
+  */
   function getTextureByName(name) {
   
     var texture;
@@ -286,6 +328,11 @@ function Viewer(initTexture, element, options) {
     
   }
   
+  /**
+    @private
+    @param {string} name - name of mesh objects in scene file
+    @return {THREE.Mesh}
+  */
   function getMeshByName(name) {
   
     var mesh;
@@ -304,39 +351,58 @@ function Viewer(initTexture, element, options) {
     
   }
   
-  function loadTextures(textureFileArray) {
+  /**
+    @private
+    @param {Array|string} paths - Array of file paths
+  */
+  function loadTextures(paths) {
   
-    for (var i = 0; i < textureFileArray.length; i++) {
+    for (var i = 0; i < paths.length; i++) {
     
-        loadTexture(textureFileArray[i], textureManager);
+        loadTexture(paths[i], textureManager);
         
      }
      
   }
   
-  function loadTexture(textureFileName, manager, newName) {
+  /**
+    @private
+    @param {string} path - file path to texture
+    @param {THREE.LoadingManager} manager - THREE.js loading manager
+    @param {string} name - override current file name when
+    saving it as a texture
+  */
+  function loadTexture(path, manager, name) {
   
     textureLoader = new THREE.TextureLoader(manager);
     
-    textureLoader.load(textureFileName,
+    textureLoader.load(
+      path,
       function(texture) {
       
-         if (newName) {
+         if (name) {
          
-            storeTexture(texture, newName);
+            storeTexture(texture, name);
             
           } else {
           
-            storeTexture(texture, textureFileName);
+            storeTexture(texture, path);
             
           }
           
       },
       function(xhr) {
-      
-         console.log('Texture ' + textureFileName + ' ' + Math.round(xhr.loaded / xhr.total * 100) + '%');
-         percent = Math.round((xhr.loaded / xhr.total * 100) * .25) + 75;
-         triggerEvent('viewer.progress', {'percent': percent});
+         
+         var percentage = Math.round(xhr.loaded / xhr.total * 100);
+           
+         partialPercent = Math.round(percentage * .25) + 75;
+         triggerEvent('viewer.progress', {'percent': partialPercent});
+         
+         if (settings.debug){
+         
+           console.log('Texture ' + path + ' ' + percentage + '%');
+         
+         }
          
       },
       function(xhr) {
@@ -348,20 +414,39 @@ function Viewer(initTexture, element, options) {
     
   }
   
-  function storeTexture(texture, filename) {
+  /**
+    @private
+    @param {THREE.Texture} texture - THREE.js texture object
+    @param {string} name - name to save the texture with
+  */
+  function storeTexture(texture, name) {
   
-    texture.name = filename;
+    texture.name = name;
     textures.push(texture);
     
   }
   
-  function updateTexture(texture, mesh) {
+  /**
+    @private
+    @param {THREE.Texture} texture - THREE.js texture object
+    @param {THREE.Mesh} mesh - THREE.js mesh object
+  */
+  function renderTexture(texture) {
   
-    texture.needsUpdate = true;
-    mesh.material.map = texture;
+    for (var i = 0; i < meshes.length; i++) {
+    
+      var mesh = meshes[i];
+      texture.needsUpdate = true;
+      mesh.material.map = texture;
+      
+    }
     
   }
   
+  /**
+    @private
+    @param {Object} element - HTML element selected with jQuery
+  */
   function debounceResize(element) {
   
     var debounce = _.debounce(resizeRenderer, 200, {leading: true});
@@ -369,15 +454,20 @@ function Viewer(initTexture, element, options) {
     
   }
   
+  /**
+    @private
+    @param {Object} element - HTML element selected with jQuery
+  */
   function resizeRenderer(element) {
   
-     canvasWidth = rendererElement.width();
+     canvasWidth = element.width();
      canvasHeight = canvasWidth / settings.aspectRatio;
      renderer.setSize(canvasWidth, canvasHeight);
      camera.updateProjectionMatrix();
      
   }
   
+  /** @private */
   function render() {
   
     if (requestFrame) {
@@ -390,41 +480,51 @@ function Viewer(initTexture, element, options) {
     
   }
   
-  function restartRender() {
+  /** @private */
+  function restart() {
   
     requestFrame = true;
     render();
     
   }
   
-  function haltRender() {
+  /** @private */
+  function halt() {
   
     requestFrame = false;
     
   }
   
-  function onMouseDown(event) {
+  /** @private */
+  function onMouseDown() {
   
-     element.css('cursor', '-webkit-grabbing');
-     element.css('cursor', 'grabbing');
+     element.addClass('viewer-interacting');
+     element.removeClass('viewer-interact');
      
    }
    
-   function onMouseUp(event) {
+   /** @private */
+   function onMouseUp() {
    
      mouseDown = false;
-     element.css('cursor', '-webkit-grab');
-     element.css('cursor', 'grab');
+     element.removeClass('viewer-interacting');
+     element.addClass('viewer-interact');
      
    }
    
-   function onMouseOut(event) {
+   /** @private */
+   function onMouseOut() {
    
-     element.css('cursor', '-webkit-grab');
-     element.css('cursor', 'grab');
+     element.removeClass('viewer-interacting');
+     element.addClass('viewer-interact');
      
    }
   
+  /**
+    @private
+    @param {string} eventName - name the event
+    @param {Object} detail - data object to be passed to the listener
+  */
   function triggerEvent(eventName, detail) {
   
     try {
@@ -457,13 +557,33 @@ function Viewer(initTexture, element, options) {
     
   }
   
+  /**
+    @private
+    @param {number} deg - degrees
+    @return {number} radians
+  */
   function radians(deg) {
   
     var rad = deg * (Math.PI/180);
     return rad;
     
   }
+  
+  /** private */
+  function mouseFeedbackListeners() {
+  
+    element.addClass('viewer-interact');
    
+    element.mousedown(onMouseDown);
+    element.mouseup(onMouseUp);
+    element.mouseleave(onMouseOut);
+    
+  }
+   
+  /**
+   create a Viewer
+   @function
+   */
   this.create = function() {
   
     $.extend(settings, options);
@@ -476,74 +596,59 @@ function Viewer(initTexture, element, options) {
       
     });
     
-    element.mousedown(onMouseDown);
-    element.mouseup(onMouseUp);
-    element.mouseleave(onMouseOut);
-    
-    element.css('cursor', '-webkit-grab');
-    element.css('cursor', 'grab');
+    mouseFeedbackListeners();
     
   };
   
-  this.toggleModels = function() {
+  /**
+   Display a saved texture using the name it was saved with.
+   @function
+   @param {string} name - name the texture was saved with
+   */
+  this.displayTexture = function(name) {
   
-    var plusModel = getMeshByName('artemix3XLMesh.js');
-    var straightModel = getMeshByName('artemixXSMesh.js');
-    
-    if (straightModel.visible == true) {
-    
-      plusModel.visible = true;
-      straightModel.visible = false;
-      
-    } else {
-    
-      straightModel.visible = true;
-      plusModel.visible = false;
-      
-    }
-    
-    triggerEvent('viewer.togglemodel');
-    
-  };
-  
-  this.switchTexture = function(name) {
-  
-    for (var i = 0; i < scene.children.length; i++) {
-    
-      object = scene.children[i];
-      
-      if (object.type == 'Mesh') {
-      
-        updateTexture(getTextureByName(name), object);
-        
-      }
-      
-    }
+    renderTexture(getTextureByName(name));
     
     triggerEvent('viewer.switchtexture');
     
   };
   
-  this.useLocalTexture = function(image, filename) {
+  /**
+   Create and save a texture using an HTML image or canvas element, then
+   display that texture on the current model.
+   @function
+   @param {Object} image - HTML image or canvas element
+   @param {string} name - name to save the texture as
+   */
+  this.displayImageAsTexture = function(image, name) {
   
     texture = new THREE.Texture(image);
-    storeTexture(texture, filename);
-    self.switchTexture(filename);
+    storeTexture(texture, name);
+    self.displayTexture(name);
     
     triggerEvent('viewer.switchtexture');
     
   };
   
-  this.addLocalTexture = function(image, filename) {
+  /**
+   Create and save a texture using an HTML image or canvas element.
+   @function
+   @param {Object} image - HTML image or canvas element
+   @param {string} name - name to save the texture as
+   */
+  this.addTextureFromImage = function(image, name) {
   
     texture = new THREE.Texture(image);
-    storeTexture(texture, filename);
+    storeTexture(texture, name);
     
   };
   
+  /**
+    Display a model by size name, "XS" or "3XL"
+    @function
+    @param {string} size - accepts "XS" or "3XL"
+  */
   this.displayModel = function(size) {
-  
-    // use size names "XS" or "3XL"
     
     var plusModel = getMeshByName('artemix3XLMesh.js');
     var straightModel = getMeshByName('artemixXSMesh.js');
@@ -552,18 +657,24 @@ function Viewer(initTexture, element, options) {
     
       straightModel.visible = true;
       plusModel.visible = false;
+      cameraControl.focus(straightModel);
       
     } else if (size == '3XL') {
     
       plusModel.visible = true;
       straightModel.visible = false;
+      cameraControl.focus(plusModel);
       
     }
     
     triggerEvent('viewer.togglemodel');
     
   };
-   
+  
+  /**
+    Bind listeners for the mouse and touch controls
+    @function
+  */
   this.createControls = function() {
   
     cameraControl.registerControls();
@@ -571,6 +682,10 @@ function Viewer(initTexture, element, options) {
     
   };
   
+  /**
+    Remove listeners for the mouse and touch controls
+    @function
+  */
   this.unbindControls = function() {
   
     cameraControl.unbindControls();
@@ -578,24 +693,39 @@ function Viewer(initTexture, element, options) {
     
   };
   
+  /**
+    Start render and bind controls
+    @function
+  */
   this.start = function() {
   
-    restartRender();
+    restart();
     self.createControls();
     
   };
   
+  /**
+    Stop render and remove controls
+    @function
+  */
   this.stop = function() {
   
-    haltRender();
+    halt();
     self.unbindControls();
     
   };
   
+  /**
+    Add an array of textures
+    @function
+  */
   this.addTextures = loadTextures;
-  this.restart = restartRender;
-  this.halt = haltRender;
-  this.changeLighting = changeLighting;
+  
+  /**
+    Change lighting set
+    @function
+  */
+  this.useLighting = useLighting;
   
   this.create();
   

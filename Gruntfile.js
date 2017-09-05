@@ -24,7 +24,16 @@ module.exports = function(grunt) {
     },
     
      eslint: {
-        target: ['js/*.js']
+        target: ['js/*.js'],
+    },
+    
+    jsdoc : {
+        dist : {
+            src: ['js/*.js'],
+            options: {
+                destination: 'documentation'
+            }
+        }
     }
   
   });
@@ -33,8 +42,10 @@ module.exports = function(grunt) {
   grunt.loadNpmTasks('grunt-contrib-watch');
   grunt.loadNpmTasks('grunt-contrib-uglify');
   grunt.loadNpmTasks('grunt-eslint');
+  grunt.loadNpmTasks('grunt-jsdoc');
   
   grunt.registerTask('default', ['concat', 'uglify']);
   grunt.registerTask('hint', ['eslint']);
+  grunt.registerTask('docs', ['jsdoc']);
  
 };

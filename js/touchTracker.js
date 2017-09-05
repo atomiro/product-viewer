@@ -1,3 +1,13 @@
+/**
+  TouchTracker distills touch events on an element into speed
+  and direction of swipe.
+  Also allows access to distance deltas for axes and
+  distance between touch points.
+  
+  @param {Object} element - HTML element selected by jQuery
+  @return {TouchTracker}
+  @constructor
+*/
 function TouchTracker(element) {
   
   var currentDistance = 0;
@@ -6,19 +16,31 @@ function TouchTracker(element) {
   var lastTouchTime;
   var lastDistance = 0;
    
+  /** @member {number} */
   this.deltaX = 0;
+  
+  /** @member {number} */
   this.deltaY = 0;
+  
+  /** @member {number} */
   this.deltaDistance = 0;
   
+  /** @member */
   this.speedX = 0;
+  
+  /** @member {number} */
   this.speedY = 0;
   
+  /** @member {string} */
   this.axis = 'HORIZONTAL';
   
   var self = this;
    
   init();
-
+  
+   /**
+     @private
+   */
   function init() {
   
     var el = element[0];
@@ -27,7 +49,11 @@ function TouchTracker(element) {
     el.addEventListener('touchend', onTouchEnd, false);
     
   }
-    
+  
+   /**
+     @private
+     @param {event} event - touch/pointer event
+   */
   function onTouchStart(event) {
   
      startTime = event.timeStamp;
@@ -50,6 +76,10 @@ function TouchTracker(element) {
      
    }
    
+   /**
+     @private
+     @param {event} event - touch/pointer event
+   */
    function onTouchMove(event) {
    
        if (event.touches.length == 1) {
@@ -71,7 +101,10 @@ function TouchTracker(element) {
        
    }
    
-   function onTouchEnd(event) {
+    /**
+     @private
+   */
+   function onTouchEnd() {
    
      self.deltaX = 0;
      self.deltaY = 0;
@@ -79,6 +112,10 @@ function TouchTracker(element) {
      
    }
    
+    /**
+     @private
+     @param {event} event - touch/pointer event
+   */
    function getTouchMoveDelta(event) {
         
      self.deltaX = lastPosition.x - event.touches[0].pageX;
@@ -88,6 +125,11 @@ function TouchTracker(element) {
       
    }
    
+   /**
+     @private
+     @param {event} event - touch/pointer event
+     @return {number} distance - distance between touch points
+   */
    function touchDistance(event) {
    
      var dx = Math.abs(event.touches[0].pageX - event.touches[1].pageX);
@@ -99,6 +141,9 @@ function TouchTracker(element) {
      
    }
    
+   /**
+     @private
+   */
    function detectAxis() {
    
      var axisDiff = Math.abs(self.deltaY - self.deltaX);
@@ -122,7 +167,12 @@ function TouchTracker(element) {
      }
      
    }
-  
+   
+   /**
+     @function
+     @param {event} event - touch/pointer event object
+     @return {Object} deltas - {dx:deltaX, dy:deltaY}
+   */
    this.getDeltas = function(event) {
    
      getTouchMoveDelta(event);
