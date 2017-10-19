@@ -1,8 +1,7 @@
 /**
   TouchTracker distills touch events on an element into speed
-  and direction of swipe.
-  Also allows access to distance deltas for axes and
-  distance between touch points.
+  and direction of swipe. Calculates distance and changes in distance
+  between multitouch points. 
   
   @param {Object} element - HTML element selected by jQuery
   @return {TouchTracker}

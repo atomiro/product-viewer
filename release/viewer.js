@@ -493,6 +493,7 @@ function MeshControl(meshes, rendererElement, options) {
    
      mouseSpeedFactor: .7,
      touchSpeedFactor: 15,
+     idleSpeed: 0.006
      
    };
    
@@ -508,8 +509,9 @@ function MeshControl(meshes, rendererElement, options) {
    
    var mouseDown = false;
    var mouseIn = false;
-      
    
+   var idling = true;
+      
    var touchTracker = new TouchTracker(rendererElement);
    
    init();
@@ -537,6 +539,7 @@ function MeshControl(meshes, rendererElement, options) {
      rendererElement.mouseleave(onMouseOut);
      
      rendererElement[0].addEventListener('touchmove', onTouchMove, false);
+     rendererElement[0].addEventListener('touchstart', onTouchStart, false);
      
    }
    
@@ -550,6 +553,7 @@ function MeshControl(meshes, rendererElement, options) {
      rendererElement.off('mousemove', onMouseMove);
      
      rendererElement[0].removeEventListener('touchmove', onTouchMove);
+     rendererElement[0].removeEventListener('touchstart', onTouchStart);
      
    }
    
@@ -576,6 +580,10 @@ function MeshControl(meshes, rendererElement, options) {
    */
    function onMouseDown() {
    
+     if (idling){
+       idling = false;
+     }
+     
      mouseDown = true;
      
    }
@@ -605,6 +613,18 @@ function MeshControl(meshes, rendererElement, options) {
    
      mouseIn = false;
      mouseDown = false;
+     
+   }
+   
+   /**
+     @private
+     @param {event} event - touch/pointer event
+   */
+   function onTouchStart(event) {
+     
+     if (idling){
+       idling = false;
+     }
      
    }
    
@@ -668,6 +688,28 @@ function MeshControl(meshes, rendererElement, options) {
         
    }
    
+   /** 
+   Idle animation - call within main render loop 
+   @function 
+   */
+   this.animate = function(){
+     
+     if (idling){
+     
+       for (var i = 0; i < meshes.length; i++) {
+         meshes[i].rotation.y -= settings.idleSpeed
+       }
+     
+     }
+     
+   }
+   
+   this.idle = function() {
+   
+     idling = true;
+   
+   }
+   
    /**
    Register event listeners to the rendererElement
    @function
@@ -685,9 +727,8 @@ function MeshControl(meshes, rendererElement, options) {
 }
 ;/**
   TouchTracker distills touch events on an element into speed
-  and direction of swipe.
-  Also allows access to distance deltas for axes and
-  distance between touch points.
+  and direction of swipe. Calculates distance and changes in distance
+  between multitouch points. 
   
   @param {Object} element - HTML element selected by jQuery
   @return {TouchTracker}
@@ -1381,7 +1422,10 @@ function Viewer(initTexture, element, options) {
     if (requestFrame) {
     
       requestAnimationFrame(render);
+      
       cameraControl.animate();
+      meshControl.animate();
+      
       renderer.render(scene, camera);
       
     }
@@ -1622,6 +1666,12 @@ function Viewer(initTexture, element, options) {
     self.unbindControls();
     
   };
+  
+  this.idle = function(){
+  
+    meshControl.idle();
+    
+  }
   
   /**
     Add an array of textures

@@ -46,6 +46,10 @@
         viewer.useLighting(lighting);
       });
       
+      $('.idle').click(function(){
+        viewer.idle();
+      });
+      
       $('.render-control').click( function(){
         if (isRendering) {
           viewer.stop();
@@ -116,15 +120,25 @@
   <div class="preview"></div>
 
   <div class="controls">
-   <button class="switch-model" data-size="XS">XS Model</button>
-   <button class="switch-model" data-size="3XL">3XL Model</button>
-   <button class="show-texture" 
+    <button class="render-control">Stop</button>
+    
+    <p>
+     <button class="switch-model" data-size="XS">XS Model</button>
+     <button class="switch-model" data-size="3XL">3XL Model</button>
+    </p> 
+   
+   <p>
+     <button class="show-texture" 
      data-texture="assets/Azalea-V1S13-01.jpg" 
      data-lighting ="mid">Azalea</button>
-   <button class="show-texture" 
+     <button class="show-texture" 
      data-texture="assets/Bismuth-V1S12-Grey-01.jpg" 
      data-lighting="dark">Bismuth</button>
-   <button class="render-control">Stop</button>
+   </p>  
+   
+   <p>
+     <button class="idle">Spin</button>
+   </p>
    
    <h3>Controls</h3>
    <p>

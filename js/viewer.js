@@ -473,7 +473,10 @@ function Viewer(initTexture, element, options) {
     if (requestFrame) {
     
       requestAnimationFrame(render);
+      
       cameraControl.animate();
+      meshControl.animate();
+      
       renderer.render(scene, camera);
       
     }
@@ -714,6 +717,12 @@ function Viewer(initTexture, element, options) {
     self.unbindControls();
     
   };
+  
+  this.idle = function(){
+  
+    meshControl.idle();
+    
+  }
   
   /**
     Add an array of textures

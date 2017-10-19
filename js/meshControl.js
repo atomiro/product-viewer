@@ -12,6 +12,7 @@ function MeshControl(meshes, rendererElement, options) {
    
      mouseSpeedFactor: .7,
      touchSpeedFactor: 15,
+     idleSpeed: 0.006
      
    };
    
@@ -27,8 +28,9 @@ function MeshControl(meshes, rendererElement, options) {
    
    var mouseDown = false;
    var mouseIn = false;
-      
    
+   var idling = true;
+      
    var touchTracker = new TouchTracker(rendererElement);
    
    init();
@@ -56,6 +58,7 @@ function MeshControl(meshes, rendererElement, options) {
      rendererElement.mouseleave(onMouseOut);
      
      rendererElement[0].addEventListener('touchmove', onTouchMove, false);
+     rendererElement[0].addEventListener('touchstart', onTouchStart, false);
      
    }
    
@@ -69,6 +72,7 @@ function MeshControl(meshes, rendererElement, options) {
      rendererElement.off('mousemove', onMouseMove);
      
      rendererElement[0].removeEventListener('touchmove', onTouchMove);
+     rendererElement[0].removeEventListener('touchstart', onTouchStart);
      
    }
    
@@ -95,6 +99,10 @@ function MeshControl(meshes, rendererElement, options) {
    */
    function onMouseDown() {
    
+     if (idling){
+       idling = false;
+     }
+     
      mouseDown = true;
      
    }
@@ -124,6 +132,18 @@ function MeshControl(meshes, rendererElement, options) {
    
      mouseIn = false;
      mouseDown = false;
+     
+   }
+   
+   /**
+     @private
+     @param {event} event - touch/pointer event
+   */
+   function onTouchStart(event) {
+     
+     if (idling){
+       idling = false;
+     }
      
    }
    
@@ -185,6 +205,28 @@ function MeshControl(meshes, rendererElement, options) {
         mouseX = event.pageX;
         mouseY = event.pageY;
         
+   }
+   
+   /** 
+   Idle animation - call within main render loop 
+   @function 
+   */
+   this.animate = function(){
+     
+     if (idling){
+     
+       for (var i = 0; i < meshes.length; i++) {
+         meshes[i].rotation.y -= settings.idleSpeed
+       }
+     
+     }
+     
+   }
+   
+   this.idle = function() {
+   
+     idling = true;
+   
    }
    
    /**
