@@ -17,6 +17,7 @@ function Viewer(initTexture, element, options) {
     cameraYPosition: 11.5,
     initialRotation: 20,
     sceneBackgroundColor: 'transparent',
+    idleSpeed: 0.006,
     normalXS: 'assets/maps/viewer_XS_2k_normal.jpg',
     normal3XL: 'assets/maps/viewer_3XL_2k_normal.jpg',
     specularXS: 'assets/maps/viewer_XS_2k_specular.jpg',
@@ -246,8 +247,10 @@ function Viewer(initTexture, element, options) {
       
     meshes[1].visible = false;
     meshes[0].visible = true;
+    
+    mc_options = { idleSpeed: settings.idleSpeed }
       
-    meshControl = new MeshControl(meshes, rendererElement);
+    meshControl = new MeshControl(meshes, rendererElement, mc_options);
     
   }
   
