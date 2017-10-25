@@ -539,7 +539,6 @@ function MeshControl(meshes, rendererElement, options) {
      rendererElement.mouseleave(onMouseOut);
      
      rendererElement[0].addEventListener('touchmove', onTouchMove, false);
-     rendererElement[0].addEventListener('touchstart', onTouchStart, false);
      
    }
    
@@ -553,7 +552,6 @@ function MeshControl(meshes, rendererElement, options) {
      rendererElement.off('mousemove', onMouseMove);
      
      rendererElement[0].removeEventListener('touchmove', onTouchMove);
-     rendererElement[0].removeEventListener('touchstart', onTouchStart);
      
    }
    
@@ -620,25 +618,17 @@ function MeshControl(meshes, rendererElement, options) {
      @private
      @param {event} event - touch/pointer event
    */
-   function onTouchStart(event) {
-     
-     if (idling){
-       idling = false;
-     }
-     
-   }
-   
-   /**
-     @private
-     @param {event} event - touch/pointer event
-   */
    function onTouchMove(event) {
    
      if (event.touches.length == 1) {
      
        if (touchTracker.axis == 'HORIZONTAL') {
        
-          event.preventDefault();
+         event.preventDefault();
+       
+         if (idling){
+           idling = false;
+         }
           
           var angle = (touchTracker.speedX * Math.PI / 180)
             * settings.touchSpeedFactor;
@@ -697,7 +687,7 @@ function MeshControl(meshes, rendererElement, options) {
      if (idling){
      
        for (var i = 0; i < meshes.length; i++) {
-         meshes[i].rotation.y -= settings.idleSpeed
+         meshes[i].rotation.y += settings.idleSpeed
        }
      
      }
