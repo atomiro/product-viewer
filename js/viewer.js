@@ -531,36 +531,37 @@ function Viewer(initTexture, element, options) {
     @param {string} eventName - name the event
     @param {Object} detail - data object to be passed to the listener
   */
-  function triggerEvent(eventName, detail) {
-  
+  function triggerEvent(eventName, detail){
+
+    element = $(element);
+
     try {
-    
-      event = $.Event(eventName);
-      
-      if (detail) {
-      
+
+      event = $.Event(eventName); 
+
+      if (detail){
+
         event.detail = detail;
-        
+
       }
+
+      element.trigger(event);
+
+    } catch (e) {  
+
+      console.warn("Modern Event API not supported", e);
       
-      rendererElement.trigger(event);
-      
-    } catch (e) {
+      var event = document.createEvent('CustomEvent');
+
+      event.initCustomEvent(eventName, true, true, detail)
     
-      console.warn('Event API not supported', e);
-      
-      var event = document.createEvent('Event');
-      
-      event.initEvent(eventName, true, true);
-    
-      var elementClass = rendererElement.attr('class');
-      
+      var elementClass =  element.attr('class');
+
       eventElement = document.getElementsByClassName(elementClass)[0];
-      
       eventElement.dispatchEvent(event);
-      
+
     }
-    
+
   }
   
   /**
