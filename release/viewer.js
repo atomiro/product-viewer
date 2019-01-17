@@ -758,11 +758,13 @@ function TouchTracker(element) {
      @private
    */
   function init() {
-  
-    var el = element[0];
-    el.addEventListener('touchstart', onTouchStart, false);
-    el.addEventListener('touchmove', onTouchMove, false);
-    el.addEventListener('touchend', onTouchEnd, false);
+
+    var elementClass =  element.attr('class');
+    var domElement = document.getElementsByClassName(elementClass)[0];
+
+    domElement.addEventListener('touchstart', onTouchStart, false);
+    domElement.addEventListener('touchmove', onTouchMove, false);
+    domElement.addEventListener('touchend', onTouchEnd, false);
     
   }
   
@@ -904,6 +906,7 @@ function TouchTracker(element) {
   Animation utility functions
   @namespace
 */
+
 var ControlUtils = {
  /**
   constrain a value between min and max
@@ -913,7 +916,7 @@ var ControlUtils = {
   @param {Number} max
   @return {Number}
   */
- clamp: function(value, min, max) {
+  clamp: function(value, min, max) {
  
     var clampedValue = (value > max) ? max : (value < min) ? min : value;
     return clampedValue;
@@ -928,11 +931,18 @@ var ControlUtils = {
   @param {Number} progress - expressed in a fraction between 0 and 1
   @return {Number}
   */
- lerp: function(p0, p1, progress) {
+  lerp: function(p0, p1, progress) {
  
     ControlUtils.clamp(progress, 0, 1);
     var pu = p0 + (p1 - p0) * progress;
     return pu;
+    
+  },
+
+  radians: function(deg) {
+  
+    var rad = deg * (Math.PI/180);
+    return rad;
     
   },
 
@@ -945,49 +955,46 @@ var ControlUtils = {
   @return {Viewer} Viewer
   @constructor
 */
-function Viewer(initTexture, element, options) {
+function Viewer(options, sceneSettings) {
 
   var settings = {
-  
-    sceneFile: 'models_scene.json',
+    scene: "assets/scene_specularImageADJ.json",
+    container: $('.viewer'),
     fov: 23,
     aspectRatio: 4/5,
     cameraXPosition: 35,
     cameraYPosition: 11.5,
-    initialRotation: 20,
-    sceneBackgroundColor: 'transparent',
     idleSpeed: 0.006,
-    normalXS: 'assets/maps/viewer_XS_2k_normal.jpg',
-    normal3XL: 'assets/maps/viewer_3XL_2k_normal.jpg',
-    specularXS: 'assets/maps/viewer_XS_2k_specular.jpg',
-    specular3XL: 'assets/maps/viewer_3XL_2k_specular.jpg',
-    lightSpecColor: 0x202020,
-    darkSpecColor: 0xa5a4a6,
-    debug: false
-    
+    debug: false,
+    requestRender: false
   };
   
   // INTERNALS
+  var initialized = false;    
   
   var requestFrame = true;
-  var initialized = false;
   
   var scene;
   var camera;
   var renderer;
+  var rendererElement;
+
+  var canvasWidth;
+  var canvasHeight;
   
   var cameraControl;
-  
-  var meshes = [];
   var meshControl;
     
-  var textures = [];
   var textureManager;
+  var initManager;
   
-  var rendererElement = element;
-  
-  var canvasWidth = rendererElement.width();
-  var canvasHeight = canvasWidth / settings.aspectRatio;
+  var sceneSettings = sceneSettings;
+
+  // local objects - models and textures that have already been initialized
+  var currentModel;
+  var meshes = [];
+  var models = []
+  var textures = []
   
   var DEVICE_PIXEL_RATIO = window.devicePixelRatio ?
     window.devicePixelRatio : 1;
@@ -1003,16 +1010,17 @@ function Viewer(initTexture, element, options) {
   */
   function loadScene() {
       
-    var file = settings.sceneFile;
+    rendererElement = settings.container;  
+    var sceneFile = settings.scene;
     var objloader = new THREE.ObjectLoader();
         
-    objloader.load(file,
+    objloader.load(sceneFile,
       init,
       function(xhr) {
       
-        var partialPercent = Math.round(xhr.loaded / xhr.total * 75);
+        var percent = xhr.loaded / xhr.total;
         
-        triggerEvent('viewer.progress', {'percent': partialPercent});
+        triggerEvent('viewer.progress', {'percent': percent});
         
       },
       function(xhr) {
@@ -1028,9 +1036,13 @@ function Viewer(initTexture, element, options) {
     @param {Object} file - THREE.js Scene json object
   */
   function init(file) {
+    scene = file;
   
     renderer = new THREE.WebGLRenderer({alpha: true, antialias: true});
     renderer.setPixelRatio(DEVICE_PIXEL_RATIO);
+
+    canvasWidth = rendererElement.width();
+    canvasHeight = canvasWidth / settings.aspectRatio;
     renderer.setSize(canvasWidth, canvasHeight);
     
     rendererElement.append(renderer.domElement);
@@ -1045,91 +1057,44 @@ function Viewer(initTexture, element, options) {
       
       if (bgcolor) {
       
-        file.background = bgcolor;
+        scene.background = bgcolor;
         
       } else {
       
-        file.background = new THREE.Color(0x000000);
+        scene.background = new THREE.Color(0x000000);
         
       }
        
     }
-      
-    scene = file;
     
-    initManager = new THREE.LoadingManager();
-    
-    initManager.onLoad = function() {
-    
-      initScene();
-      
-    };
-    
-    initManager.onProgress = function(url, itemsLoaded, itemsTotal) {
-    
-      if (settings.debug){
-        console.log('INIT Loading file: ' + url +
-        '.\nLoaded ' + itemsLoaded +
-        ' of ' + itemsTotal + ' files.');
-      }
-      
-    };
-    
-    textureManager = new THREE.LoadingManager();
-    
-    textureManager.onError = function(event) {
-    
-      console.log('manager error');
-      console.log(event);
-      
-    };
-    
-    textureManager.onProgress = function(url, itemsLoaded, itemsTotal) {
-    
-      if (settings.debug){
-        console.log('Loading file: ' + url +
-       '.\nLoaded ' + itemsLoaded + ' of '
-       + itemsTotal + ' files.');
-      } 
-     
-    };
-    
-    textureManager.onLoad = function() {
-    
-      if (settings.debug){
-        console.log("texture added");
-      }
-       
-    };
-    
-    loadTexture(initTexture, initManager);
-    
-    loadTexture(settings.normalXS, initManager, 'XS_Normal');
-    loadTexture(settings.specularXS, initManager, 'XS_Specular');
-    loadTexture(settings.normal3XL, initManager, '3XL_Normal');
-    loadTexture(settings.specular3XL, initManager, '3XL_Specular');
+    bindElementControls(rendererElement);
 
+    initCamera();
+    initMeshControl();
+    triggerEvent('viewer.initialized');
+    initialized = true;
+
+    if (settings.requestRender == false){ 
+      restart(); 
+    };
   }
-  
-  /** @private */
-  function initScene() {
-  
-    if (initialized == false) {
+
+  function initMeshControl(){
+    var mc_options = { idleSpeed: settings.idleSpeed }
+
+    for (var i = 0; i < scene.children.length; i++) {
     
-        initMeshes();
-        initCamera();
+        object = scene.children[i];
         
-        useLighting('mid');
+        if (object.type == 'Mesh') {
         
-        render();
-        
-        triggerEvent('viewer.loaded');
-      
-        initialized = true;
-        
-      }
-      
+          meshes.push(object);
+        }  
+    }    
+
+    meshControl = new MeshControl(meshes, rendererElement, mc_options);
   }
+
   
   /** @private */
   function initCamera() {
@@ -1138,115 +1103,42 @@ function Viewer(initTexture, element, options) {
       settings.aspectRatio, CAM_NEAR_PLANE, CAM_FAR_PLANE);
     
     camera.position.z = settings.cameraXPosition;
+    camera.position.y = settings.cameraYPosition;
     
-    var cameraSettings = {
+   var cameraSettings = {
     
       maxZoom: settings.cameraXPosition,
-      maxCameraHeight: meshes[1].geometry.boundingBox.size().y * .115,
+      maxCameraHeight: 15,
       
-    };
-    
-    cameraControl = new CameraDollyControl(camera,
-      rendererElement, cameraSettings);
-      
-    cameraControl.focus(meshes[0]);
+  };
+
+    cameraControl = new CameraDollyControl(camera, rendererElement, cameraSettings);
     
   }
-  
-  /** @private */
-  function initMeshes() {
-    
-    for (var i = 0; i < scene.children.length; i++) {
-    
-        object = scene.children[i];
-        
-        if (object.type == 'Mesh') {
-        
-          meshes.push(object);
-          object.material.map = getTextureByName(initTexture);
-          
-          if (object.name == 'artemix3XLMesh.js') {
-          
-            object.material.normalMap = getTextureByName('3XL_Normal');
-            object.material.specularMap = getTextureByName('3XL_Specular');
-            
-          } else {
-          
-            object.material.normalMap = getTextureByName('XS_Normal');
-            object.material.specularMap = getTextureByName('XS_Specular');
-            
-          }
-          
-          object.geometry.computeBoundingBox();
-          object.rotation.y = radians(settings.initialRotation);
-          
-        }
-        
-      }
-      
-    meshes[1].visible = false;
-    meshes[0].visible = true;
-    
-    mc_options = { idleSpeed: settings.idleSpeed }
-      
-    meshControl = new MeshControl(meshes, rendererElement, mc_options);
-    
+
+  function getModelByName(modelName){
+    var model;
+     for (var i=0; i < sceneSettings.models.length; i++){  
+       if (sceneSettings.models[i].name == modelName){
+         model = sceneSettings.models[i];
+       }
+     }
+
+     return model;
   }
-  
-  /**
-    @private
-    @param {string} style - "Light", "Dark" or "Mid"
-  */
-  function useLighting(style) {
-  
-    // light or dark style
+
+  function getMapByName(mapName){
+    var map;
     
-    style = style.toLowerCase();
-    
-    if (style == 'dark') {
-    
-      specularColor = new THREE.Color(settings.darkSpecColor);
-      
-      for (i=0; i < meshes.length; i++) {
-      
-        meshes[i].material.specular = specularColor;
-        
-      }
-      
-      scene.getObjectByName('DarkDesignLights').visible = true;
-      scene.getObjectByName('BrightDesignLights').visible = false;
-      scene.getObjectByName('MidDesignLights').visible = false;
-      
-    } else if (style == 'light') {
-    
-      specularColor = new THREE.Color(settings.lightSpecColor);
-      
-      for (i=0; i < meshes.length; i++) {
-      
-        meshes[i].material.specular = specularColor;
-        
-      }
-      
-      scene.getObjectByName('BrightDesignLights').visible = true;
-      scene.getObjectByName('DarkDesignLights').visible = false;
-      scene.getObjectByName('MidDesignLights').visible = false;
-      
-    } else if (style == 'mid') {
-    
-      scene.getObjectByName('MidDesignLights').visible = true;
-      scene.getObjectByName('BrightDesignLights').visible = false;
-      scene.getObjectByName('DarkDesignLights').visible = false;
-      
-    } else {
-    
-      scene.getObjectByName('MidDesignLights').visible = true;
-      scene.getObjectByName('BrightDesignLights').visible = false;
-      scene.getObjectByName('DarkDesignLights').visible = false;
-      
-    }
-      
+     for (var i=0; i < sceneSettings.maps.length; i++){  
+      if (sceneSettings.maps[i].name == mapName){
+         map = sceneSettings.maps[i];
+       }
+     }
+
+     return map;
   }
-  
+
   /**
     @private
     @param {string} name - name texture was saved with
@@ -1269,120 +1161,170 @@ function Viewer(initTexture, element, options) {
     return texture;
     
   }
-  
-  /**
-    @private
-    @param {string} name - name of mesh objects in scene file
-    @return {THREE.Mesh}
-  */
-  function getMeshByName(name) {
-  
-    var mesh;
-    
-    for (var i = 0; i < meshes.length; i++) {
-    
-      if (meshes[i].name == name) {
-      
-        mesh = meshes[i];
-        
+
+  /****** DIY Loading Managers that use Promises ******/
+
+  function loadTexture(url){
+    if (settings.debug){
+      console.log('loading texture:', url);
+    }
+    return new Promise(function(resolve, reject){
+      var textureLoader = new THREE.TextureLoader();
+      textureLoader.load(url, resolve);
+    });
+  }
+
+  // load and prepare one model at a time according to the product variant
+  function initModel(modelName){
+
+     console.log("initModel", modelName);
+
+     var model = getModelByName(modelName);
+     var object = scene.getObjectByName(model.scene_object);
+
+     var texturePromises = []
+
+     for (var i=0; i < model.maps.length; i++){
+
+        var map = getMapByName(model.maps[i]);
+        var promise = loadTexture(map.file);
+
+        texturePromises.push(promise);
+
+     }
+
+    Promise.all(texturePromises).then(function(result){
+
+       object.material.normalMap = result[0];
+       object.material.specularMap = result[1];
+
+       models.push(modelName);
+
+     });
+
+  }
+
+  function displayModel(name){
+    currentModel = name;
+
+    if (models.indexOf(name) == -1) {
+      initModel(name);
+    }
+
+    var model = getModelByName(name);
+    var mesh = scene.getObjectByName(model.scene_object);
+
+    mesh.visible = true;
+    cameraControl.focus(mesh);
+
+    for (var i=0; i < sceneSettings.models.length; i++){
+      var objectName = sceneSettings.models[i].scene_object;
+      if (objectName != mesh.name){
+        var m = scene.getObjectByName(objectName);
+        m.visible = false;
       }
-      
+    }
+
+  }
+
+  function initTexture(name){
+    var model = getModelByName(currentModel);
+    var mesh = scene.getObjectByName(model.scene_object);
+
+    var textureSettings;
+
+    for (var i=0; i < sceneSettings.textures.length; i++){ 
+
+      if (sceneSettings.textures[i].name == name){
+        textureSettings = sceneSettings.textures[i];
+      }
+
+    }
+
+    var file = textureSettings.file;
+    var promise = loadTexture(file);
+
+    promise.then( function(texture){ 
+      storeTexture(texture, textureSettings.name);
+      console.log("loaded texture:", textureSettings.name);
+    
+      renderTexture(texture, mesh);
+      console.log("applied to:", mesh.name);
+
+      useLighting(textureSettings.lighting);
+      triggerEvent('viewer.switchtexture');
+
+    });
+
+  }
+
+  function displayTexture(name){
+    var model = getModelByName(currentModel);
+    var mesh = scene.getObjectByName(model.scene_object);
+
+    var textureSettings;
+
+    for (var i=0; i < sceneSettings.textures.length; i++){ 
+      if (sceneSettings.textures[i].name == name){
+         textureSettings = sceneSettings.textures[i];
+      }
     }
     
-    return mesh;
+    var texture = getTextureByName(name);
+
+    if (!texture) {
+     initTexture(name);
+    } else {
+      renderTexture(texture, mesh);
+      console.log("applied "+ texture.name + " to " + mesh.name);
+      useLighting(textureSettings.lighting);
+      triggerEvent('viewer.switchtexture');
+    }
     
   }
-  
-  /**
-    @private
-    @param {Array|string} paths - Array of file paths
-  */
-  function loadTextures(paths) {
-  
-    for (var i = 0; i < paths.length; i++) {
-    
-        loadTexture(paths[i], textureManager);
-        
-     }
-     
+
+  function useLighting(name){
+    var model = getModelByName(currentModel);
+    var mesh = scene.getObjectByName(model.scene_object);
+
+    var lightingSettings;
+
+    for (var i=0; i < sceneSettings.lighting.length; i++){ 
+      if (sceneSettings.lighting[i].name == name){
+        lightingSettings = sceneSettings.lighting[i];
+      }
+    }
+
+    var lightsObject = lightingSettings.scene_object;
+    console.log("useLighting", name, lightsObject);
+
+    if (lightingSettings.specular_color){
+
+      var specularColor = new THREE.Color(Number(lightingSettings.specular_color));
+      mesh.material.specular = specularColor;
+
+    }
+
+    for (var i=0; i < sceneSettings.lighting.length; i++){ 
+      var object = scene.getObjectByName(sceneSettings.lighting[i].scene_object);
+      if (object.name == lightsObject) {
+        object.visible = true;
+      } else {
+        object.visible = false;
+      }
+    }
+
   }
   
-  /**
-    @private
-    @param {string} path - file path to texture
-    @param {THREE.LoadingManager} manager - THREE.js loading manager
-    @param {string} name - override current file name when
-    saving it as a texture
-  */
-  function loadTexture(path, manager, name) {
-  
-    textureLoader = new THREE.TextureLoader(manager);
-    
-    textureLoader.load(
-      path,
-      function(texture) {
-      
-         if (name) {
-         
-            storeTexture(texture, name);
-            
-          } else {
-          
-            storeTexture(texture, path);
-            
-          }
-          
-      },
-      function(xhr) {
-         
-         var percentage = Math.round(xhr.loaded / xhr.total * 100);
-           
-         partialPercent = Math.round(percentage * .25) + 75;
-         triggerEvent('viewer.progress', {'percent': partialPercent});
-         
-         if (settings.debug){
-         
-           console.log('Texture ' + path + ' ' + percentage + '%');
-         
-         }
-         
-      },
-      function(xhr) {
-      
-        console.log('loader error');
-        console.log(xhr);
-        
-      });
-    
-  }
-  
-  /**
-    @private
-    @param {THREE.Texture} texture - THREE.js texture object
-    @param {string} name - name to save the texture with
-  */
-  function storeTexture(texture, name) {
-  
-    texture.name = name;
-    textures.push(texture);
-    
-  }
   
   /**
     @private
     @param {THREE.Texture} texture - THREE.js texture object
     @param {THREE.Mesh} mesh - THREE.js mesh object
   */
-  function renderTexture(texture) {
-  
-    for (var i = 0; i < meshes.length; i++) {
-    
-      var mesh = meshes[i];
+  function renderTexture(texture, mesh) {
       texture.needsUpdate = true;
-      mesh.material.map = texture;
-      
-    }
-    
+      mesh.material.map = texture;    
   }
   
   /**
@@ -1441,7 +1383,7 @@ function Viewer(initTexture, element, options) {
   }
   
   /** @private */
-  function onMouseDown() {
+  function onMouseDown(element) {
   
      element.addClass('viewer-interacting');
      element.removeClass('viewer-interact');
@@ -1449,7 +1391,7 @@ function Viewer(initTexture, element, options) {
    }
    
    /** @private */
-   function onMouseUp() {
+   function onMouseUp(element) {
    
      mouseDown = false;
      element.removeClass('viewer-interacting');
@@ -1458,7 +1400,7 @@ function Viewer(initTexture, element, options) {
    }
    
    /** @private */
-   function onMouseOut() {
+   function onMouseOut(element) {
    
      element.removeClass('viewer-interacting');
      element.addClass('viewer-interact');
@@ -1470,36 +1412,35 @@ function Viewer(initTexture, element, options) {
     @param {string} eventName - name the event
     @param {Object} detail - data object to be passed to the listener
   */
-  function triggerEvent(eventName, detail) {
-  
+  function triggerEvent(eventName, detail){
+
     try {
-    
-      event = $.Event(eventName);
-      
-      if (detail) {
-      
+
+      event = $.Event(eventName); 
+
+      if (detail){
+
         event.detail = detail;
-        
+
       }
-      
+
       rendererElement.trigger(event);
+
+    } catch (e) {  
+
+      console.warn("Modern Event API not supported", e);
       
-    } catch (e) {
+      var event = document.createEvent('CustomEvent');
+
+      event.initCustomEvent(eventName, true, true, detail)
     
-      console.warn('Event API not supported', e);
-      
-      var event = document.createEvent('Event');
-      
-      event.initEvent(eventName, true, true);
-    
-      var elementClass = rendererElement.attr('class');
-      
+      var elementClass =  rendererElement.attr('class');
+
       eventElement = document.getElementsByClassName(elementClass)[0];
-      
       eventElement.dispatchEvent(event);
-      
+
     }
-    
+
   }
   
   /**
@@ -1507,23 +1448,33 @@ function Viewer(initTexture, element, options) {
     @param {number} deg - degrees
     @return {number} radians
   */
-  function radians(deg) {
-  
-    var rad = deg * (Math.PI/180);
-    return rad;
-    
-  }
   
   /** private */
-  function mouseFeedbackListeners() {
+  function mouseFeedbackListeners(element) {
   
     element.addClass('viewer-interact');
    
-    element.mousedown(onMouseDown);
-    element.mouseup(onMouseUp);
-    element.mouseleave(onMouseOut);
+    element.mousedown(function(){
+       onMouseDown(element);
+     });
+    element.mouseup(function(){
+      onMouseUp(element);
+    });
+    element.mouseleave(function(){
+      onMouseOut(element);
+    });
     
   }
+
+  function bindElementControls(element){
+    $(window).resize(function() {
+     
+      debounceResize(element);
+      
+    });
+    
+    mouseFeedbackListeners(element);
+  };
    
   /**
    create a Viewer
@@ -1535,28 +1486,14 @@ function Viewer(initTexture, element, options) {
     
     loadScene();
     
-    $(window).resize(function() {
-     
-      debounceResize(element);
-      
-    });
-    
-    mouseFeedbackListeners();
-    
   };
+
+  function storeTexture(texture, name) {
   
-  /**
-   Display a saved texture using the name it was saved with.
-   @function
-   @param {string} name - name the texture was saved with
-   */
-  this.displayTexture = function(name) {
-  
-    renderTexture(getTextureByName(name));
+    texture.name = name;
+    textures.push(texture);
     
-    triggerEvent('viewer.switchtexture');
-    
-  };
+  }
   
   /**
    Create and save a texture using an HTML image or canvas element, then
@@ -1587,34 +1524,10 @@ function Viewer(initTexture, element, options) {
     storeTexture(texture, name);
     
   };
-  
-  /**
-    Display a model by size name, "XS" or "3XL"
-    @function
-    @param {string} size - accepts "XS" or "3XL"
-  */
-  this.displayModel = function(size) {
-    
-    var plusModel = getMeshByName('artemix3XLMesh.js');
-    var straightModel = getMeshByName('artemixXSMesh.js');
-    
-    if (size == 'XS') {
-    
-      straightModel.visible = true;
-      plusModel.visible = false;
-      cameraControl.focus(straightModel);
-      
-    } else if (size == '3XL') {
-    
-      plusModel.visible = true;
-      straightModel.visible = false;
-      cameraControl.focus(plusModel);
-      
-    }
-    
-    triggerEvent('viewer.togglemodel');
-    
-  };
+
+  this.displayModel = displayModel;
+
+  this.displayTexture = displayTexture;
   
   /**
     Bind listeners for the mouse and touch controls
@@ -1665,18 +1578,6 @@ function Viewer(initTexture, element, options) {
     meshControl.idle();
     
   }
-  
-  /**
-    Add an array of textures
-    @function
-  */
-  this.addTextures = loadTextures;
-  
-  /**
-    Change lighting set
-    @function
-  */
-  this.useLighting = useLighting;
   
   this.create();
   

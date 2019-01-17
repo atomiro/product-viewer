@@ -12,6 +12,7 @@
     <script src="https://cdn.jsdelivr.net/lodash/4.16.4/lodash.min.js"></script>
     <script src="vendor/three.js"></script>
     <script src="release/viewer.min.js"></script>
+    <script src ="assets/leggsy_settings.js"></script>
     <script type="text/javascript">
     
     var viewer;
@@ -20,32 +21,40 @@
     
       var isRendering = false;
     
-      var settings = { 
+      var viewSettings = { 
+        container: $('.preview'),
         sceneFile: "assets/scene_ArtemixCurrent.js",
         sceneBackgroundColor: "rgb(100, 20, 100)",
         idleSpeed: 0.004,
-        initialRotation: -28
+        initialRotation: -28,
+        debug: true,
+        requestRender: true
       }
       
       var viewerDiv = $('.preview');
-      viewer = new Viewer('assets/Azalea-V1S13-01.jpg', viewerDiv, settings);
+      viewer = new Viewer(viewSettings, sceneSettings);
+
+      viewerDiv.on('viewer.initialized', function(){
+        console.log('viewer init');
+        viewer.displayModel("3XLModel");
+        viewer.displayTexture("Azalea");
+        viewer.start();
+      });
       
-      viewerDiv.on('viewer.loaded', function(){ 
+      viewerDiv.on('viewer.switchtexture', function(){ 
+        console.log('switchtexture');
         $(this).addClass("show-viewer"); 
-        viewer.addTextures(['assets/Bismuth-V1S12-Grey-01.jpg']);
         isRendering = true;
       });
       
       $('.switch-model').click( function(){
-        var size = $(this).data('size');
-        viewer.displayModel(size);
+        var model = $(this).data('model');
+        viewer.displayModel(model);
       });
       
       $('.show-texture').click( function(){
-        textureFile = $(this).data('texture');
-        lighting = $(this).data('lighting');
-        viewer.displayTexture(textureFile);
-        viewer.useLighting(lighting);
+        texture = $(this).data('texture');
+        viewer.displayTexture(texture);
       });
       
       $('.idle').click(function(){
@@ -125,17 +134,15 @@
     <button class="render-control">Stop</button>
     
     <p>
-     <button class="switch-model" data-size="XS">XS Model</button>
-     <button class="switch-model" data-size="3XL">3XL Model</button>
+     <button class="switch-model" data-model="XSModel">XS Model</button>
+     <button class="switch-model" data-model="3XLModel">3XL Model</button>
     </p> 
    
    <p>
      <button class="show-texture" 
-     data-texture="assets/Azalea-V1S13-01.jpg" 
-     data-lighting ="mid">Azalea</button>
+     data-texture="Azalea">Azalea</button>
      <button class="show-texture" 
-     data-texture="assets/Bismuth-V1S12-Grey-01.jpg" 
-     data-lighting="dark">Bismuth</button>
+     data-texture="Bismuth">Bismuth</button>
    </p>  
    
    <p>

@@ -41,11 +41,13 @@ function TouchTracker(element) {
      @private
    */
   function init() {
-  
-    var el = element[0];
-    el.addEventListener('touchstart', onTouchStart, false);
-    el.addEventListener('touchmove', onTouchMove, false);
-    el.addEventListener('touchend', onTouchEnd, false);
+
+    var elementClass =  element.attr('class');
+    var domElement = document.getElementsByClassName(elementClass)[0];
+
+    domElement.addEventListener('touchstart', onTouchStart, false);
+    domElement.addEventListener('touchmove', onTouchMove, false);
+    domElement.addEventListener('touchend', onTouchEnd, false);
     
   }
   
