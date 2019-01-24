@@ -26,7 +26,6 @@
         sceneFile: "assets/scene_ArtemixCurrent.js",
         sceneBackgroundColor: "rgb(100, 20, 100)",
         idleSpeed: 0.004,
-        initialRotation: -28,
         debug: true,
         requestRender: true
       }
@@ -36,8 +35,7 @@
 
       viewerDiv.on('viewer.initialized', function(){
         console.log('viewer init');
-        viewer.displayModel("3XLModel");
-        viewer.displayTexture("Azalea");
+        viewer.displayModelWithTexture("3XLModel", "Azalea");
         viewer.start();
       });
       
@@ -55,6 +53,13 @@
       $('.show-texture').click( function(){
         texture = $(this).data('texture');
         viewer.displayTexture(texture);
+      });
+
+      $('.switch-model-texture').click(function(){
+        var texture = $(this).data('texture');
+        var model = $(this).data('model');
+
+        viewer.displayModelWithTexture(model, texture);
       });
       
       $('.idle').click(function(){
@@ -137,6 +142,17 @@
      <button class="switch-model" data-model="XSModel">XS Model</button>
      <button class="switch-model" data-model="3XLModel">3XL Model</button>
     </p> 
+
+    <p>
+      <button class="switch-model-texture" data-model="XSModel" data-texture="Azalea">
+      XS Model / Azalea</button>
+      <button class="switch-model-texture" data-model="XSModel" data-texture="Bismuth">
+      XS Model / Bismuth</button>
+       <button class="switch-model-texture" data-model="3XLModel" data-texture="Azalea">
+      3X Model / Azalea</button>
+      <button class="switch-model-texture" data-model="3XLModel" data-texture="Bismuth">
+      3X Model / Bismuth</button>
+    </p>  
    
    <p>
      <button class="show-texture" 
