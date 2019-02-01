@@ -44,6 +44,16 @@
         $(this).addClass("show-viewer"); 
         isRendering = true;
       });
+
+      viewerDiv.on('viewer.error', function(error){
+        console.log("error", error);
+        $(this).removeClass("show-viewer"); 
+        viewer.stop();
+        isRendering = false;
+
+        $('.error').append("<p>"+ error.detail.message +"</p>");
+        $('.error').addClass('show');
+      });
       
       $('.switch-model').click( function(){
         var model = $(this).data('model');
@@ -119,6 +129,15 @@
 	     cursor: grabbing;
 	     cursor: -webkit-grabbing;
 	   }
+
+     .error {
+      display: none;
+      border: 1px solid #fff;
+     }
+
+     .show {
+      display: block;
+     }
 	   
 	   @media screen and (max-width: 530px){
 	     .preview { 
@@ -134,6 +153,7 @@
   <h1>Design Viewer</h1>
 
   <div class="preview"></div>
+  <div class="error">Sorry, an error has occurred.</div>
 
   <div class="controls">
     <button class="render-control">Stop</button>

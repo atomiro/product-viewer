@@ -221,7 +221,14 @@ function Viewer(options, sceneSettings) {
     }
     return new Promise(function(resolve, reject){
       var textureLoader = new THREE.TextureLoader();
-      textureLoader.load(url, resolve);
+
+      textureLoader.load(url, 
+        resolve, 
+        function(response){
+          //console.log(response);
+        }, 
+        reject);
+
     });
   }
 
@@ -254,6 +261,8 @@ function Viewer(options, sceneSettings) {
 
        models.push(modelName);
 
+     }, function(xhr){
+       triggerEvent("viewer.error", {message: xhr.target.status });
      });
 
   }
@@ -295,23 +304,29 @@ function Viewer(options, sceneSettings) {
 
     }
 
-    var file = textureSettings.file;
-    var promise = loadTexture(file);
+    if (textureSettings) {
+      var file = textureSettings.file;
+      var promise = loadTexture(file);
 
-    promise.then( function(texture){ 
-      storeTexture(texture, textureSettings.name);
+       promise.then( function(texture){ 
+        storeTexture(texture, textureSettings.name);
     
-      renderTexture(texture, mesh);
+        renderTexture(texture, mesh);
 
-      if (settings.debug){
-        console.log("init loaded texture:", textureSettings.name);
-        console.log("applied to:", mesh.name);
-      }
+        if (settings.debug){
+          console.log("init loaded texture:", textureSettings.name);
+          console.log("applied to:", mesh.name);
+        }
 
-      useLighting(textureSettings.lighting);
-      triggerEvent('viewer.switchtexture');
+        useLighting(textureSettings.lighting);
+        triggerEvent('viewer.switchtexture');
 
-    });
+      }, function(xhr){
+        triggerEvent("viewer.error", {message: xhr.target.status });
+      });
+    } else {
+      triggerEvent("viewer.error", {message: "texture " + name + " not found." });
+    }
 
   }
 
@@ -378,7 +393,11 @@ function Viewer(options, sceneSettings) {
 
     if (!textureInitialized(textureName)){
 
-      texturePromises.push(loadTexture(textureSettings.file));
+      if (textureSettings) {
+        texturePromises.push(loadTexture(textureSettings.file));
+      } else {
+        triggerEvent("viewer.error", {message: "texture " + textureName + " not found."});
+      }
 
     } else {
 
@@ -439,6 +458,8 @@ function Viewer(options, sceneSettings) {
       setVisible(modelName);
       triggerEvent('viewer.switchtexture');
 
+    }, function(xhr){
+      triggerEvent("viewer.error", { message: xhr.target.status });
     });
 
   }
@@ -626,21 +647,21 @@ function Viewer(options, sceneSettings) {
   function triggerEvent(eventName, detail){
 
     try {
-
+      console.log("new style event " + eventName);
       event = $.Event(eventName); 
 
-      if (detail){
+     if (detail){
 
         event.detail = detail;
 
       }
 
       rendererElement.trigger(event);
-
+    
     } catch (e) {  
 
       console.warn("Modern Event API not supported", e);
-      
+      console.log("old style event " + eventName);
       var event = document.createEvent('CustomEvent');
 
       event.initCustomEvent(eventName, true, true, detail)
@@ -651,6 +672,7 @@ function Viewer(options, sceneSettings) {
       eventElement.dispatchEvent(event);
 
     }
+    
 
   }
   
@@ -694,8 +716,12 @@ function Viewer(options, sceneSettings) {
   this.create = function() {
   
     $.extend(settings, options);
-    
-    loadScene();
+
+    if (self.checkRenderingContext() == true) {
+      loadScene();
+    } else {
+      triggerEvent("viewer.error", {message: "WebGL unavailable"});
+    }
     
   };
 
@@ -790,6 +816,26 @@ function Viewer(options, sceneSettings) {
   
     meshControl.idle();
     
+  }
+
+  this.checkRenderingContext = function (){
+ 
+    // Create canvas element. The canvas is not added to the
+    // document itself, so it is never displayed in the
+    // browser window.
+
+    var canvas = document.createElement("canvas");
+    // Get WebGLRenderingContext from canvas element.
+    var gl = canvas.getContext("webgl") 
+      || canvas.getContext("experimental-webgl");
+    // Report the result.
+    if (gl && gl instanceof WebGLRenderingContext) {
+      return true;
+    } else {
+      return false;
+    }
+    
+  
   }
   
   this.create();
