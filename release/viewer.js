@@ -1243,13 +1243,15 @@ var ControlUtils = {
 */
 function Viewer(options, sceneSettings) {
 
+  // camera position doesn't really make sense
+
   var settings = {
     scene: "assets/scene_specularImageADJ.json",
     container: $('.viewer'),
     fov: 23,
     aspectRatio: 4/5,
     cameraXPosition: 35,
-    cameraYPosition: 11.5,
+    cameraYPosition: 5,
     idleSpeed: 0.006,
     debug: false,
     requestRender: false
@@ -1279,6 +1281,8 @@ function Viewer(options, sceneSettings) {
 
   // local objects - models and textures that have already been initialized
   var currentModel;
+  var currentLighting;
+
   var meshes = [];
   var models = []
   var textures = []
@@ -1298,8 +1302,10 @@ function Viewer(options, sceneSettings) {
   function loadScene() {
       
     rendererElement = settings.container;  
-    var sceneFile = settings.scene;
+    var sceneFile = sceneSettings.scene_path;
     var objloader = new THREE.ObjectLoader();
+
+    console.log("load scene", sceneFile);
         
     objloader.load(sceneFile,
       init,
@@ -1367,7 +1373,8 @@ function Viewer(options, sceneSettings) {
   }
 
   function initMeshControl(){
-    var mc_options = { idleSpeed: settings.idleSpeed }
+
+    var options = { idleSpeed: settings.idleSpeed }
 
     for (var i = 0; i < scene.children.length; i++) {
     
@@ -1376,10 +1383,12 @@ function Viewer(options, sceneSettings) {
         if (object.type == 'Mesh') {
         
           meshes.push(object);
+
         }  
     }    
 
-    meshControl = new MeshControl(meshes, rendererElement, mc_options);
+    meshControl = new MeshControl(meshes, rendererElement, options);
+
   }
 
   
@@ -1387,7 +1396,7 @@ function Viewer(options, sceneSettings) {
   function initCamera() {
   
     camera = new THREE.PerspectiveCamera(settings.fov,
-      settings.aspectRatio, CAM_NEAR_PLANE, CAM_FAR_PLANE);
+             settings.aspectRatio, CAM_NEAR_PLANE, CAM_FAR_PLANE);
     
     camera.position.z = settings.cameraXPosition;
     camera.position.y = settings.cameraYPosition;
@@ -1404,27 +1413,21 @@ function Viewer(options, sceneSettings) {
     
   }
 
-  function getModelByName(modelName){
-    var model;
-     for (var i=0; i < sceneSettings.models.length; i++){  
-       if (sceneSettings.models[i].name == modelName){
-         model = sceneSettings.models[i];
-       }
-     }
+  function getSettings(type, name){
+    var settings;
 
-     return model;
+    settings = sceneSettings[type].filter(function(item){ return item.name == name });
+
+    return settings[0];
   }
 
-  function getMapByName(mapName){
-    var map;
-    
-     for (var i=0; i < sceneSettings.maps.length; i++){  
-      if (sceneSettings.maps[i].name == mapName){
-         map = sceneSettings.maps[i];
-       }
-     }
+  function getModel(name){ 
+   
+   var settings = getSettings("models", name);
+   var object = scene.getObjectByName(settings.scene_object);
 
-     return map;
+   return {mesh: object, settings: settings};
+
   }
 
   /**
@@ -1435,353 +1438,301 @@ function Viewer(options, sceneSettings) {
   function getTextureByName(name) {
   
     var texture;
+
+    texture = textures.filter(function(item){ return item.name == name });
     
-    for (var i = 0; i < textures.length; i++) {
-    
-      if (textures[i].name == name) {
-      
-        texture = textures[i];
-        
-      }
-      
-    }
-    
-    return texture;
+    return texture[0];
     
   }
 
-  function loadTexture(url){
-    if (settings.debug){
-      console.log('loading texture:', url);
+  function getTexture(name) {
+
+    var texturePromise;
+
+    if (textureInitialized(name)) {
+      
+      texture = getTextureByName(name);
+
+      texturePromise = Promise.resolve(texture);
+      
+    } else {
+
+      var textureSettings = getSettings("textures", name);
+
+      if (!textureSettings) {
+
+        var textureSettings = getSettings("maps", name);
+
+      }
+
+      if (textureSettings) {
+
+        texturePromise = loadTexture(textureSettings.file, textureSettings.name);
+
+      } else {
+       
+       triggerEvent("viewer.error", {message: "Settings for texture " + name + " not found." });
+
+      }
+
     }
-    return new Promise(function(resolve, reject){
-      var textureLoader = new THREE.TextureLoader();
+
+    return texturePromise;
+
+  }
+
+  function loadTexture(url, name){
+
+    if (!name){
+      name = url;
+    }
+
+    var textureLoader = new THREE.TextureLoader();
+
+    var loadingPromise = new Promise(function(resolve, reject){
 
       textureLoader.load(url, 
         resolve, 
-        function(response){
-          //console.log(response);
-        }, 
+        function(response){}, 
         reject);
 
+    }).then(function(result){
+
+      storeTexture(result, name);
+
+    }).catch(function(xhr){
+
+       triggerEvent("viewer.error", {message: xhr.target.status });
+
     });
+
+    return loadingPromise;
+
   }
 
-  // load and prepare one model at a time according to the product variant
   function initModel(modelName){
-    if (settings.debug){
-     console.log("initModel", modelName);
-   }
 
-     var model = getModelByName(modelName);
-     var object = scene.getObjectByName(model.scene_object);
+    if (settings.debug){ console.log("initModel", modelName); }
 
-     var texturePromises = []
+    var model = getModel(modelName);
 
-     for (var i=0; i < model.maps.length; i++){
+    var loadMaps = [];
 
-        var map = getMapByName(model.maps[i]);
-        var promise = loadTexture(map.file);
+    for (var i=0; i < model.settings.maps.length; i++){
 
-        texturePromises.push(promise);
+      var map = getSettings("maps", model.settings.maps[i]);
 
-     }
+      var promise = getTexture(map.name);
 
-    Promise.all(texturePromises).then(function(result){
-       
-       object.material.normalMap = result[0];
-       object.material.specularMap = result[1];
+      loadMaps.push(promise);
 
-       object.material.needsUpdate = true;
+    }
+
+    return Promise.all(loadMaps).then(function(){
+
+       applyMaps(model);
 
        models.push(modelName);
 
-     }, function(xhr){
-       triggerEvent("viewer.error", {message: xhr.target.status });
-     });
+    });
+
 
   }
 
   function displayModel(name){
-    currentModel = name;
 
-    if (models.indexOf(name) == -1) {
-      initModel(name);
-    }
+    if (!modelInitialized(namel)){
 
-    var model = getModelByName(name);
-    var mesh = scene.getObjectByName(model.scene_object);
+      initModel(name).then(function(){
 
-    mesh.visible = true;
-    cameraControl.focus(mesh);
+        currentModel = name;
 
-    for (var i=0; i < sceneSettings.models.length; i++){
-      var objectName = sceneSettings.models[i].scene_object;
-      if (objectName != mesh.name){
-        var m = scene.getObjectByName(objectName);
-        m.visible = false;
-      }
-    }
+        var model = getModel(currentModel);
 
-  }
+        cameraControl.focus(model.mesh);
 
-  function initTexture(name){
-    var model = getModelByName(currentModel);
-    var mesh = scene.getObjectByName(model.scene_object);
+        display("models", name);
 
-    var textureSettings;
-
-    for (var i=0; i < sceneSettings.textures.length; i++){ 
-
-      if (sceneSettings.textures[i].name == name){
-        textureSettings = sceneSettings.textures[i];
-      }
-
-    }
-
-    if (textureSettings) {
-      var file = textureSettings.file;
-      var promise = loadTexture(file);
-
-       promise.then( function(texture){ 
-        storeTexture(texture, textureSettings.name);
-    
-        renderTexture(texture, mesh);
-
-        if (settings.debug){
-          console.log("init loaded texture:", textureSettings.name);
-          console.log("applied to:", mesh.name);
-        }
-
-        useLighting(textureSettings.lighting);
-        triggerEvent('viewer.switchtexture');
-
-      }, function(xhr){
-        triggerEvent("viewer.error", {message: xhr.target.status });
       });
+
     } else {
-      triggerEvent("viewer.error", {message: "texture " + name + " not found." });
+      currentModel = name;
+
+      var model = getModel(name);
+
+      cameraControl.focus(model.mesh);
+
+      display("models", name);
+
     }
 
   }
 
   function displayTexture(name){
-    var model = getModelByName(currentModel);
-    var mesh = scene.getObjectByName(model.scene_object);
-
-    var textureSettings;
-
-    for (var i=0; i < sceneSettings.textures.length; i++){ 
-      if (sceneSettings.textures[i].name == name){
-         textureSettings = sceneSettings.textures[i];
-      }
-    }
     
-    var texture = getTextureByName(name);
+    var model = getModel(currentModel);
 
-    if (!texture) {
+    var textureSettings = getSettings("textures", name);
 
-      initTexture(name);
+    getTexture(name).then(function(){
 
-    } else {
+      var texture = getTextureByName(name);
 
-      renderTexture(texture, mesh);
+      renderTexture(texture, model.mesh);
 
       useLighting(textureSettings.lighting); 
 
       triggerEvent('viewer.switchtexture');
 
       if (settings.debug){
-        console.log("applied "+ texture.name +" to: " + mesh.name );
+        console.log("applied "+ name +" to: " + model.mesh.name );
       }
 
-    }
-    
-  }
-
-  function displayModelWithTexture(modelName, textureName){
-    currentModel = modelName;
-
-    var model = getModelByName(modelName);
-    var mesh = scene.getObjectByName(model.scene_object);
-
-    var texture = getTextureByName(textureName);
-    var textureSettings = getTextureSettings(textureName);
-
-    var texturePromises = [];
-    
-    if (!modelInitialized(modelName)) {
-
-       if (settings.debug) {
-         console.log('init model with texture', modelName, textureName);
-       }   
-
-       for (var i=0; i < model.maps.length; i++){
-
-          var map = getMapByName(model.maps[i]);
-          var promise = loadTexture(map.file);
-
-          texturePromises.push(promise);
-
-       }
-    }
-
-    if (!textureInitialized(textureName)){
-
-      if (textureSettings) {
-        texturePromises.push(loadTexture(textureSettings.file));
-      } else {
-        triggerEvent("viewer.error", {message: "texture " + textureName + " not found."});
-      }
-
-    } else {
-
-      mesh.material.map = texture;
-      mesh.material.needsUpdate = true;
-
-      if (modelInitialized(modelName)){
-
-        setVisible(modelName);
-        useLighting(textureSettings.lighting); 
-        triggerEvent('viewer.switchtexture');
-     
-      }  
-
-    }
-
-    Promise.all(texturePromises).then(function(result){
-  
-      if (result.length == 1) {
-        if (settings.debug) {
-          console.log("loaded texture: " + textureSettings.name);
-        }
-        storeTexture(result[0], textureSettings.name);
-
-        mesh.material.map = result[0];
-
-      } else if (result.length == 2){
-
-        if (settings.debug) {
-          console.log("loaded maps");
-        }
-
-        applyMaps(mesh, result[0], result[1]);
-
-        models.push(modelName);
-        cameraControl.focus(mesh);
-
-      } else if (result.length > 0) {
-
-        if (settings.debug) {
-          console.log("loaded texture and maps");
-        }
-
-        applyMaps(mesh, result[0], result[1]);
-
-        mesh.material.map = result[2];
-    
-        models.push(modelName);
-        cameraControl.focus(mesh);
-
-        storeTexture(result[2], textureSettings.name);
-
-      }
-
-      useLighting(textureSettings.lighting); 
-
-      mesh.material.needsUpdate = true;
-      setVisible(modelName);
-      triggerEvent('viewer.switchtexture');
-
-    }, function(xhr){
-      triggerEvent("viewer.error", { message: xhr.target.status });
     });
 
   }
 
-  function applyMaps(mesh, normal, specular){
-    mesh.material.normalMap = normal;
-    mesh.material.specularMap = specular;
+  function displayModelWithTexture(modelName, textureName){
+
+    var model = getModel(modelName);
+    console.log("model", model);
+
+    var textureSettings = getSettings("textures", textureName);
+
+    var loadTextures = [];
+    
+    if (!modelInitialized(modelName)) {
+
+      loadTextures.push(initModel(modelName));
+
+    } 
+
+    loadTextures.push(getTexture(textureName));
+
+    Promise.all(loadTextures).then(function(){
+
+        currentModel = modelName;
+
+        var texture = getTextureByName(textureName);
+
+        useLighting(textureSettings.lighting); 
+
+        renderTexture(texture, model.mesh);
+
+        console.log('focus', model.mesh.name);
+        cameraControl.focus(model.mesh);
+
+        display("models", modelName);
+
+        triggerEvent('viewer.switchtexture');
+
+    });
+
   }
 
-  function getTextureSettings(textureName){
-    var settings;
+  function applyMaps(model){
 
-    for (var i=0; i < sceneSettings.textures.length; i++){ 
-      if (sceneSettings.textures[i].name == textureName){
-         settings = sceneSettings.textures[i];
+    console.log("apply maps")
+       
+    for (var i=0; i < model.settings.maps.length; i++){
+         
+      var mapName = model.settings.maps[i];
+      var map = getTextureByName(mapName);
+
+      var mapSettings = getSettings("maps", mapName);
+      mapType = mapSettings.type; 
+         
+      if (mapType == "normal") {
+
+        model.mesh.material.normalMap = map;
+
+      } else if (mapType == "specular") {
+
+        model.mesh.material.specularMap = map;
+
       }
+
     }
 
-    return settings
   }
 
   function modelInitialized(modelName){
+
     var init = false;
+
     if (models.indexOf(modelName) != -1) {
+
       init = true;
+
     }
     return init;
+
   }
 
   function textureInitialized(textureName){
+
     var init = false;
+
     var texture = getTextureByName(textureName);
+
     if (texture) { init = true }; 
+
     return init;
   }
 
-  function setVisible(modelName){
-    
-    var model = getModelByName(modelName);
-    var mesh = scene.getObjectByName(model.scene_object); 
-    mesh.visible = true;
+  function display(type, name){
 
-    for (var i=0; i < sceneSettings.models.length; i++){
-      var objectName = sceneSettings.models[i].scene_object;
-      if (objectName != mesh.name){
-        var object = scene.getObjectByName(objectName);
-        object.visible = false;
+    var settings = getSettings(type, name);
+    var sceneObject = settings.scene_object;
+    var objectSettings = sceneSettings[type];
+
+    for (var i=0; i < objectSettings.length; i++){ 
+  
+      var object = scene.getObjectByName(objectSettings[i].scene_object);
+  
+      if (object) {
+
+        if (object.name == sceneObject) {
+
+          object.visible = true;
+
+        } else {
+
+          object.visible = false;
+
+        }
+
       }
+
     }
 
   }
 
   function useLighting(name){
-    var model = getModelByName(currentModel);
+
+    var model = getSettings("models", currentModel);
     var mesh = scene.getObjectByName(model.scene_object);
+    
+    lighting = getSettings("lighting", name);
 
-    var lightingSettings;
-
-    for (var i=0; i < sceneSettings.lighting.length; i++){ 
-      if (sceneSettings.lighting[i].name == name){
-        lightingSettings = sceneSettings.lighting[i];
-      }
+    if (lighting.specular_color) {
+      setSpecularColor(mesh, lighting);
     }
 
-    var lightsObject = lightingSettings.scene_object;
+    display("lighting", name);
+
     if (settings.debug){
-      console.log("useLighting", name, lightsObject);
-    }
-
-    if (lightingSettings.specular_color){
-
-      var specularColor = new THREE.Color(Number(lightingSettings.specular_color));
-      mesh.material.specular = specularColor;
-
-    }
-
-    for (var i=0; i < sceneSettings.lighting.length; i++){ 
-      var object = scene.getObjectByName(sceneSettings.lighting[i].scene_object);
-      if (object.name == lightsObject) {
-        object.visible = true;
-      } else {
-        object.visible = false;
-      }
+      console.log("useLighting", name);
     }
 
   }
-  
+
+  function setSpecularColor(mesh, lightingSettings){
+
+    var specularColor = new THREE.Color(Number(lightingSettings.specular_color));
+    mesh.material.specular = specularColor;
+
+  }
   
   /**
     @private
@@ -1882,7 +1833,7 @@ function Viewer(options, sceneSettings) {
   function triggerEvent(eventName, detail){
 
     try {
-      console.log("new style event " + eventName);
+
       event = $.Event(eventName); 
 
      if (detail){
@@ -1890,13 +1841,15 @@ function Viewer(options, sceneSettings) {
         event.detail = detail;
 
       }
-
-      rendererElement.trigger(event);
+      
+      requestAnimationFrame(function(){
+        rendererElement.trigger(event);
+      });
     
     } catch (e) {  
 
       console.warn("Modern Event API not supported", e);
-      console.log("old style event " + eventName);
+    
       var event = document.createEvent('CustomEvent');
 
       event.initCustomEvent(eventName, true, true, detail)
@@ -1904,7 +1857,10 @@ function Viewer(options, sceneSettings) {
       var elementClass =  rendererElement.attr('class');
 
       eventElement = document.getElementsByClassName(elementClass)[0];
-      eventElement.dispatchEvent(event);
+
+      requestAnimationFrame(function(){
+        eventElement.dispatchEvent(event);
+      });
 
     }
     
@@ -1961,6 +1917,8 @@ function Viewer(options, sceneSettings) {
   };
 
   function storeTexture(texture, name) {
+
+    console.log("stored texture", name);
     
     texture.name = name;
     textures.push(texture);
