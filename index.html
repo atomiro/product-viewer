@@ -37,8 +37,7 @@
         viewer.displayModelWithTexture("WWB3XLModel", "Bismuth");
       });
       
-      viewerDiv.on('viewer.switchtexture', function(){ 
-        console.log('switchtexture');
+      viewerDiv.one('viewer.switchtexture', function(){ 
         $(this).addClass("show-viewer"); 
         viewer.start();
         isRendering = true;

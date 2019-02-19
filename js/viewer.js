@@ -11,7 +11,6 @@ function Viewer(options, sceneSettings) {
   // camera position doesn't really make sense
 
   var settings = {
-    scene: "assets/scene_specularImageADJ.json",
     container: $('.viewer'),
     fov: 23,
     aspectRatio: 4/5,
@@ -44,7 +43,6 @@ function Viewer(options, sceneSettings) {
   
   var sceneSettings = sceneSettings;
 
-  // local objects - models and textures that have already been initialized
   var currentModel;
   var currentLighting;
 
@@ -65,15 +63,17 @@ function Viewer(options, sceneSettings) {
     load scene created with the THREE.js Scene Editor
   */
   function loadScene() {
-      
-    rendererElement = settings.container;  
-    var sceneFile = sceneSettings.scene_path;
-    var objloader = new THREE.ObjectLoader();
 
-    console.log("load scene", sceneFile);
-        
-    objloader.load(sceneFile,
-      init,
+    var sceneFile = sceneSettings.scene_path;
+
+    var objLoader = new THREE.ObjectLoader();
+
+    if ( settings.debug ){ console.log("load scene", sceneFile); }
+
+    var loadingPromise = new Promise(function(resolve, reject){
+
+      objLoader.load(sceneFile,
+      resolve,
       function(xhr) {
       
         var percent = xhr.loaded / xhr.total;
@@ -81,12 +81,12 @@ function Viewer(options, sceneSettings) {
         triggerEvent('viewer.progress', {'percent': percent});
         
       },
-      function(xhr) {
+      reject);
       
-        console.log(xhr);
-        
-      });
+    });
     
+    return loadingPromise;
+
   }
   
   /**
@@ -236,7 +236,7 @@ function Viewer(options, sceneSettings) {
 
       } else {
        
-       triggerEvent("viewer.error", {message: "Settings for texture " + name + " not found." });
+       texturePromise = Promise.reject("Settings for texture " + name + " not found.");
 
       }
 
@@ -265,9 +265,7 @@ function Viewer(options, sceneSettings) {
 
       storeTexture(result, name);
 
-    }).catch(function(xhr){
-
-       triggerEvent("viewer.error", {message: xhr.target.status });
+      return result;
 
     });
 
@@ -275,62 +273,72 @@ function Viewer(options, sceneSettings) {
 
   }
 
-  function initModel(modelName){
+  function initModel(name){
 
-    if (settings.debug){ console.log("initModel", modelName); }
+    var model = getModel(name);
 
-    var model = getModel(modelName);
+    if (!modelInitialized(name)){
 
-    var loadMaps = [];
+      if (settings.debug){ console.log("initModel", name); }
 
-    for (var i=0; i < model.settings.maps.length; i++){
+      var loadMaps = [];
 
-      var map = getSettings("maps", model.settings.maps[i]);
+      for (var i=0; i < model.settings.maps.length; i++){
 
-      var promise = getTexture(map.name);
+        var map = getSettings("maps", model.settings.maps[i]);
 
-      loadMaps.push(promise);
+        if (map) {
+
+          var loadMap = getTexture(map.name);
+
+          loadMaps.push(loadMap);
+
+        }
+
+      }
+
+      if (loadMaps.length != model.settings.maps.length){
+
+        return Promise.reject("Expected "+ model.settings.maps.length + "settings for maps, found " + loadMaps.length);
+
+      }
+
+      return Promise.all(loadMaps).then(function(){
+
+         applyMaps(model);
+
+         models.push(name);
+
+         return model;
+
+      });
+
+    } else {
+
+       return Promise.resolve(model);
 
     }
-
-    return Promise.all(loadMaps).then(function(){
-
-       applyMaps(model);
-
-       models.push(modelName);
-
-    });
 
 
   }
 
   function displayModel(name){
 
-    if (!modelInitialized(namel)){
-
-      initModel(name).then(function(){
+    initModel(name).then(function(model){
 
         currentModel = name;
-
-        var model = getModel(currentModel);
 
         cameraControl.focus(model.mesh);
 
         display("models", name);
 
-      });
+    }).catch(function(err){
+  
+       console.log(err);
+       triggerEvent('viewer.error', { message: err });
 
-    } else {
-      currentModel = name;
-
-      var model = getModel(name);
-
-      cameraControl.focus(model.mesh);
-
-      display("models", name);
-
-    }
-
+    });
+    
   }
 
   function displayTexture(name){
@@ -339,13 +347,11 @@ function Viewer(options, sceneSettings) {
 
     var textureSettings = getSettings("textures", name);
 
-    getTexture(name).then(function(){
-
-      var texture = getTextureByName(name);
+    getTexture(name).then(function(texture){
 
       renderTexture(texture, model.mesh);
 
-      useLighting(textureSettings.lighting); 
+      useLighting(textureSettings.lighting, model.mesh); 
 
       triggerEvent('viewer.switchtexture');
 
@@ -353,51 +359,47 @@ function Viewer(options, sceneSettings) {
         console.log("applied "+ name +" to: " + model.mesh.name );
       }
 
-    });
+    }).catch(function(err){
 
+      console.log(err);
+      triggerEvent('viewer.error', { message: err });
+
+    });
   }
 
   function displayModelWithTexture(modelName, textureName){
 
-    var model = getModel(modelName);
-    console.log("model", model);
-
     var textureSettings = getSettings("textures", textureName);
 
-    var loadTextures = [];
-    
-    if (!modelInitialized(modelName)) {
+    var loadTextures = [initModel(modelName), getTexture(textureName)];  
 
-      loadTextures.push(initModel(modelName));
+    Promise.all(loadTextures).then(function(result){
 
-    } 
-
-    loadTextures.push(getTexture(textureName));
-
-    Promise.all(loadTextures).then(function(){
+        var model = result[0];
+        var texture = result[1];
 
         currentModel = modelName;
 
-        var texture = getTextureByName(textureName);
-
-        useLighting(textureSettings.lighting); 
+        useLighting(textureSettings.lighting, model.mesh); 
 
         renderTexture(texture, model.mesh);
 
-        console.log('focus', model.mesh.name);
         cameraControl.focus(model.mesh);
 
         display("models", modelName);
 
         triggerEvent('viewer.switchtexture');
 
-    });
+    }).catch(function(err){
 
+      console.log(err);
+      triggerEvent('viewer.error', { message: err });
+
+    });
+    
   }
 
   function applyMaps(model){
-
-    console.log("apply maps")
        
     for (var i=0; i < model.settings.maps.length; i++){
          
@@ -424,12 +426,13 @@ function Viewer(options, sceneSettings) {
   function modelInitialized(modelName){
 
     var init = false;
-
+  
     if (models.indexOf(modelName) != -1) {
 
       init = true;
 
     }
+
     return init;
 
   }
@@ -473,29 +476,29 @@ function Viewer(options, sceneSettings) {
 
   }
 
-  function useLighting(name){
+  function useLighting(name, mesh){
 
-    var model = getSettings("models", currentModel);
-    var mesh = scene.getObjectByName(model.scene_object);
-    
-    lighting = getSettings("lighting", name);
+    if (!(currentLighting == name)) {
+     
+      lighting = getSettings("lighting", name);
 
-    if (lighting.specular_color) {
-      setSpecularColor(mesh, lighting);
+      if (lighting.specular_color) {
+
+        var specularColor = new THREE.Color(Number(lighting.specular_color));
+
+        mesh.material.specular = specularColor;
+
+      }
+
+      display("lighting", name);
+
+      if (settings.debug){
+        console.log("useLighting", name);
+      }
+
+      currentLighting = name;
+        
     }
-
-    display("lighting", name);
-
-    if (settings.debug){
-      console.log("useLighting", name);
-    }
-
-  }
-
-  function setSpecularColor(mesh, lightingSettings){
-
-    var specularColor = new THREE.Color(Number(lightingSettings.specular_color));
-    mesh.material.specular = specularColor;
 
   }
   
@@ -673,17 +676,34 @@ function Viewer(options, sceneSettings) {
   
     $.extend(settings, options);
 
+    rendererElement = settings.container; 
+
     if (self.checkRenderingContext() == true) {
-      loadScene();
+
+      loadScene().then(function(scene){
+
+        init(scene);
+
+      }).catch(function(err){
+        
+         console.log(err);
+         triggerEvent("viewer.error", {message: err });
+
+      });
+
     } else {
+
       triggerEvent("viewer.error", {message: "WebGL unavailable"});
+
     }
     
   };
 
   function storeTexture(texture, name) {
-
-    console.log("stored texture", name);
+ 
+    if (settings.debug){
+      console.log("loaded texture:", name);
+    }
     
     texture.name = name;
     textures.push(texture);
