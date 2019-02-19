@@ -1,20 +1,28 @@
 var sceneSettings = {
-	"scene_name" : "scene_specularImageADJ.json",
-	"scene_path" : "assets/scene_specularImageADJ.json",
+	"scene_name" : "artemixNoSeam.json",
+	"scene_path" : "assets/artemixNoSeam.json",
 	"models" : [
 		{
 			"name" : "XSModel",
-			"scene_object": "artemixXSMesh.js",
+			"scene_object": "artemixXS.js",
 			"product_type" : "Shells",
-			"maps": ["normalXS", "specularXS"],
-            "textures" : [],
-            "rotation": "20"
-	    },
+			"maps" : ["normalXS", "gloss512"],
+			"textures" : [],
+			"rotation" : "20"
+		},
 		{
-			"name" : "3XLModel",
-			"scene_object": "artemix3XLMesh.js",
+			"name" : "WWBXSModel",
+			"scene_object": "artemixXS_noSeam.js",
 			"product_type" : "Shells",
-			"maps" : ["normal3XL", "specular3XL"],
+			"maps" : ["wide_waistband_normalXS", "gloss512"],
+			"textures" : [],
+			"rotation" : "20"
+		},
+		{
+			"name" : "WWB3XLModel",
+			"scene_object": "artemix3XL_noSeam.js",
+			"product_type" : "Shells",
+			"maps" : ["wide_waistband_normal3XL", "gloss512"],
 			"textures" : [],
 			"rotation" : "20"
 		}
@@ -37,24 +45,19 @@ var sceneSettings = {
 	],
 	"maps" : [
 		{
-			"name" : "normalXS",
-			"type" : "normal",
-			"file" : "assets/maps/viewer_XS_2k_normal.jpg"
+           "name" : "gloss512",
+           "type" : "specular",
+           "file" : "assets/maps/gloss_512.png"
 		},
 		{
-			"name" : "normal3XL",
-			"type" : "normal",
-			"file" : "assets/maps/viewer_3XL_2k_normal.jpg"
+			"name": "wide_waistband_normal3XL",
+			"type": "normal",
+			"file": "assets/maps/3XLWWB_2k_norm.png"
 		},
 		{
-			"name" : "specularXS",
-			"type" : "specular",
-			"file" : "assets/maps/viewer_XS_2k_specular.jpg"
-		},
-		{
-			"name" :"specular3XL",
-			"type" : "specular",
-			"file" : "assets/maps/viewer_3XL_2k_specular.jpg"
+			"name": "wide_waistband_normalXS",
+			"type": "normal",
+			"file": "assets/maps/XSWWB_2k_norm.png"
 		}
 	],
 	"textures" : [

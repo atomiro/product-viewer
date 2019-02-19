@@ -15,15 +15,14 @@
     <script src ="assets/leggsy_settings.js"></script>
     <script type="text/javascript">
     
-    var viewer;
-    
     $(document).ready( function(){
+
+      var viewer;
     
       var isRendering = false;
     
       var viewSettings = { 
         container: $('.preview'),
-        sceneFile: "assets/scene_ArtemixCurrent.js",
         sceneBackgroundColor: "rgb(100, 20, 100)",
         idleSpeed: 0.004,
         debug: true,
@@ -35,21 +34,19 @@
 
       viewerDiv.on('viewer.initialized', function(){
         console.log('viewer init');
-        viewer.displayModelWithTexture("3XLModel", "Azalea");
-        viewer.start();
+        viewer.displayModelWithTexture("WWB3XLModel", "Bismuth");
       });
       
       viewerDiv.on('viewer.switchtexture', function(){ 
         console.log('switchtexture');
         $(this).addClass("show-viewer"); 
+        viewer.start();
         isRendering = true;
       });
 
       viewerDiv.on('viewer.error', function(error){
         console.log("error", error);
         $(this).removeClass("show-viewer"); 
-        viewer.stop();
-        isRendering = false;
 
         $('.error').append("<p>"+ error.detail.message +"</p>");
         $('.error').addClass('show');
@@ -66,10 +63,12 @@
       });
 
       $('.switch-model-texture').click(function(){
+        
         var texture = $(this).data('texture');
         var model = $(this).data('model');
 
         viewer.displayModelWithTexture(model, texture);
+
       });
       
       $('.idle').click(function(){
@@ -159,18 +158,18 @@
     <button class="render-control">Stop</button>
     
     <p>
-     <button class="switch-model" data-model="XSModel">XS Model</button>
-     <button class="switch-model" data-model="3XLModel">3XL Model</button>
+     <button class="switch-model" data-model="WWBXSModel">XS Model</button>
+     <button class="switch-model" data-model="WWB3XLModel">3XL Model</button>
     </p> 
 
     <p>
-      <button class="switch-model-texture" data-model="XSModel" data-texture="Azalea">
+      <button class="switch-model-texture" data-model="WWBXSModel" data-texture="Azalea">
       XS Model / Azalea</button>
-      <button class="switch-model-texture" data-model="XSModel" data-texture="Bismuth">
+      <button class="switch-model-texture" data-model="WWBXSModel" data-texture="Bismuth">
       XS Model / Bismuth</button>
-       <button class="switch-model-texture" data-model="3XLModel" data-texture="Azalea">
+       <button class="switch-model-texture" data-model="WWB3XLModel" data-texture="Azalea">
       3X Model / Azalea</button>
-      <button class="switch-model-texture" data-model="3XLModel" data-texture="Bismuth">
+      <button class="switch-model-texture" data-model="WWB3XLModel" data-texture="Bismuth">
       3X Model / Bismuth</button>
     </p>  
    
