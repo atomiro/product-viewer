@@ -83,6 +83,12 @@ function CameraDollyControl(camera, rendererElement, options) {
     rendererElement[0].addEventListener('touchend', onTouchEnd, false);
     
   }
+
+  function updateZoom(){
+
+    self.panLockAt = Math.abs(settings.maxZoom) - 3;
+    zoomThreshold = Math.abs(settings.maxZoom - settings.minZoom / 2);
+  }
   
   /** @private */
   function initControls() {
@@ -153,7 +159,7 @@ function CameraDollyControl(camera, rendererElement, options) {
   function autoZoom() {
   
     isAnimating = true;
-    
+
     if (Math.abs(camera.position.z) > zoomThreshold) {
     
       if (progress == 0) {
@@ -466,6 +472,9 @@ function CameraDollyControl(camera, rendererElement, options) {
     
     cameraDist = distance;
     settings.maxZoom = distance;
+    settings.maxCameraHeight = size.y * .11;
+
+    updateZoom();
       
   }
   

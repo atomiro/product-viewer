@@ -83,6 +83,12 @@ function CameraDollyControl(camera, rendererElement, options) {
     rendererElement[0].addEventListener('touchend', onTouchEnd, false);
     
   }
+
+  function updateZoom(){
+
+    self.panLockAt = Math.abs(settings.maxZoom) - 3;
+    zoomThreshold = Math.abs(settings.maxZoom - settings.minZoom / 2);
+  }
   
   /** @private */
   function initControls() {
@@ -153,7 +159,7 @@ function CameraDollyControl(camera, rendererElement, options) {
   function autoZoom() {
   
     isAnimating = true;
-    
+
     if (Math.abs(camera.position.z) > zoomThreshold) {
     
       if (progress == 0) {
@@ -466,6 +472,9 @@ function CameraDollyControl(camera, rendererElement, options) {
     
     cameraDist = distance;
     settings.maxZoom = distance;
+    settings.maxCameraHeight = size.y * .11;
+
+    updateZoom();
       
   }
   
@@ -1249,8 +1258,8 @@ function Viewer(options, sceneSettings) {
     container: $('.viewer'),
     fov: 23,
     aspectRatio: 4/5,
-    cameraXPosition: 35,
-    cameraYPosition: 5,
+    camHorizontalPosition: 35,
+    camVerticalPosition: 5,
     idleSpeed: 0.006,
     debug: false,
     requestRender: false
@@ -1398,18 +1407,10 @@ function Viewer(options, sceneSettings) {
     camera = new THREE.PerspectiveCamera(settings.fov,
              settings.aspectRatio, CAM_NEAR_PLANE, CAM_FAR_PLANE);
     
-    camera.position.z = settings.cameraXPosition;
-    camera.position.y = settings.cameraYPosition;
+    camera.position.z = settings.camHorizontalPosition;
+    camera.position.y = settings.camVerticalPosition;
     
-   var cameraSettings = {
-    
-      maxZoom: settings.cameraXPosition,
-      maxCameraHeight: settings.cameraYPosition,
-      
-  };
-    // get the first mesh's height to set the camera's max height
-    // could set height later too if I make an attr for it
-    cameraControl = new CameraDollyControl(camera, rendererElement, cameraSettings);
+    cameraControl = new CameraDollyControl(camera, rendererElement);
     
   }
 
