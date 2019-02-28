@@ -54,6 +54,8 @@ function CameraDollyControl(camera, rendererElement, options) {
   var zoomingOut = false;
   
   var progress = 0;
+
+  var currentFocus; //which object the camera is looking at
   
   var self = this;
 
@@ -64,7 +66,7 @@ function CameraDollyControl(camera, rendererElement, options) {
 
     $.extend(settings, options);
     
-    self.panLockAt = Math.abs(settings.maxZoom) - 3;
+    self.panLockAt = Math.abs(settings.maxZoom) - 4;
     
     totalZoomDist = Math.abs(settings.minZoom - settings.maxZoom);
       
@@ -84,8 +86,9 @@ function CameraDollyControl(camera, rendererElement, options) {
     
   }
 
-  function updateZoom(){
+  function updateZoom(position){
 
+    settings.maxZoom = position;
     self.panLockAt = Math.abs(settings.maxZoom) - 3;
     zoomThreshold = Math.abs(settings.maxZoom - settings.minZoom / 2);
   }
@@ -285,7 +288,19 @@ function CameraDollyControl(camera, rendererElement, options) {
     cameraDist -= speed * factor;
     constrainZoom(settings.minZoom, settings.maxZoom);
     camera.position.z = cameraDist;
-    centerCamera();
+    levelCamera();
+
+    if (Math.abs(cameraDist) < self.panLockAt) {
+      console.log("recalculate zoom scale");
+      var scale = zoomScale(currentFocus);
+
+      currentFocus.geometry.computeBoundingBox();
+      var boundingBox = currentFocus.geometry.boundingBox;
+      var objectHeight = boundingBox.size().y;
+
+      settings.maxCameraHeight = objectHeight * scale //modify camera height with new zoomScale;
+      console.log(settings.maxCameraHeight);
+    }
 
   }
   
@@ -304,7 +319,7 @@ function CameraDollyControl(camera, rendererElement, options) {
   }
   
   /** @private */
-  function centerCamera() {
+  function levelCamera() {
   
     zoomLevel = Math.abs(cameraDist - settings.minZoom) / totalZoomDist;
     cameraHeight = ControlUtils.lerp(cameraHeight, initHeight, zoomLevel);
@@ -320,14 +335,38 @@ function CameraDollyControl(camera, rendererElement, options) {
   
     object.geometry.computeBoundingBox();
     var boundingBox = object.geometry.boundingBox;
-    var center = boundingBox.center().y * .13;
-    
+    var objectHeight = boundingBox.size().y;
+
+    var scale = zoomScale(object);
+
+    var center = boundingBox.center().y * scale;
+
     initHeight = center;
     cameraHeight = center;
-    
     camera.position.y = center;
+
     camera.lookAt(new THREE.Vector3(0, center, 0));
     
+  }
+
+  /** @private
+  get the scale of the object as seen from the camera's position. 
+  Useful for constraining the height of a pan. 
+  @param {THREE.MeshObject} object 
+  @return {number}
+  */
+  function zoomScale(object) {
+
+    var viewHeight = fovHeight();
+
+    object.geometry.computeBoundingBox();
+    var boundingBox = object.geometry.boundingBox;
+    var objectHeight = boundingBox.size().y;
+
+    var scale = (objectHeight / viewHeight) / 100;
+
+    return scale;
+
   }
   
   /**
@@ -423,6 +462,21 @@ function CameraDollyControl(camera, rendererElement, options) {
     return [deltaX, deltaY];
     
   }
+
+  /**
+  @private
+  @return {number} Height of the camera's field of view in meters
+  */
+
+  function fovHeight(){
+
+    var fov = camera.fov;
+    var half_fov = fov/2;
+    var half_fov_radians = half_fov * (Math.PI / 180);
+    var half_fov_height = Math.tan(half_fov_radians) * camera.position.z;
+    return half_fov_height * 2;
+
+  }
   
   /**
   Animate the camera
@@ -449,32 +503,28 @@ function CameraDollyControl(camera, rendererElement, options) {
   @function
   */
   this.focus = function(object) {
-  
-    centerOnObject(object);
+
+    currentFocus = object;
     
-    // fov in radians 
     var fov = camera.fov * (Math.PI / 180);
     
     object.geometry.computeBoundingBox();
         
     var bBox = object.geometry.boundingBox;
+
+    var maxDimension = Math.max(bBox.size().x, bBox.size().y, bBox.size().z); 
         
-    var size = bBox.size();
-    var center = bBox.center();
-    
-    var maxDimension = Math.max(size.x, size.y, size.z); 
-            
     var distance = Math.abs(maxDimension / 4 * Math.tan( fov * 2 ));
-        
+
     distance *= 1.33;
     
     camera.position.z = distance;
     
     cameraDist = distance;
-    settings.maxZoom = distance;
-    settings.maxCameraHeight = size.y * .11;
 
-    updateZoom();
+    centerOnObject(object);
+
+    updateZoom(distance);
       
   }
   
@@ -1406,9 +1456,6 @@ function Viewer(options, sceneSettings) {
   
     camera = new THREE.PerspectiveCamera(settings.fov,
              settings.aspectRatio, CAM_NEAR_PLANE, CAM_FAR_PLANE);
-    
-    camera.position.z = settings.camHorizontalPosition;
-    camera.position.y = settings.camVerticalPosition;
     
     cameraControl = new CameraDollyControl(camera, rendererElement);
     

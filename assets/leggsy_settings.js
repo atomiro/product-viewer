@@ -1,6 +1,6 @@
 var sceneSettings = {
-	"scene_name" : "artemixNoSeam.json",
-	"scene_path" : "assets/artemixNoSeam.json",
+	"scene_name" : "artemixNoSeam_V2.json",
+	"scene_path" : "assets/artemixNoSeam_V2.json",
 	"models" : [
 		{
 			"name" : "XSModel",
