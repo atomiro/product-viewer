@@ -15,7 +15,7 @@ function Viewer(options, sceneSettings) {
     fov: 23,
     aspectRatio: 4/5,
     camHorizontalPosition: 35,
-    camVerticalPosition: 5,
+    camVerticalPosition: 0,
     idleSpeed: 0.006,
     debug: false,
     requestRender: false
@@ -54,7 +54,7 @@ function Viewer(options, sceneSettings) {
     window.devicePixelRatio : 1;
   
   var CAM_FAR_PLANE = 500;
-  var CAM_NEAR_PLANE = 0.1;
+  var CAM_NEAR_PLANE = 5;
   
   var self = this;
   

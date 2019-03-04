@@ -54,6 +54,8 @@ function CameraDollyControl(camera, rendererElement, options) {
   var zoomingOut = false;
   
   var progress = 0;
+
+  var scaleFactor = .07;
   
   var self = this;
 
@@ -88,6 +90,7 @@ function CameraDollyControl(camera, rendererElement, options) {
 
     self.panLockAt = Math.abs(settings.maxZoom) - 3;
     zoomThreshold = Math.abs(settings.maxZoom - settings.minZoom / 2);
+
   }
   
   /** @private */
@@ -320,7 +323,8 @@ function CameraDollyControl(camera, rendererElement, options) {
   
     object.geometry.computeBoundingBox();
     var boundingBox = object.geometry.boundingBox;
-    var center = boundingBox.center().y * .13;
+
+    var center = boundingBox.center().y * object.scale.y;
     
     initHeight = center;
     cameraHeight = center;
@@ -449,12 +453,31 @@ function CameraDollyControl(camera, rendererElement, options) {
   @function
   */
   this.focus = function(object) {
-  
+
     centerOnObject(object);
+
+    object.geometry.computeBoundingBox();
+    var boundingBox = object.geometry.boundingBox;
+
+    var objHeight = boundingBox.size().y * object.scale.y;
+
+    var fovRadians = camera.fov * ( Math.PI / 180 );
+
+    var distance = Math.abs( objHeight / Math.sin( fovRadians / 2 ) );
+    distance = distance * .56;
+
+    camera.position.z = distance;
+    cameraDist = distance;
+
+    settings.maxZoom = distance;
+
+    settings.maxCameraHeight = objHeight - 1.5;
+
+    updateZoom();
+
+    console.log(objHeight, distance);
     
-    // fov in radians 
-    var fov = camera.fov * (Math.PI / 180);
-    
+    /*
     object.geometry.computeBoundingBox();
         
     var bBox = object.geometry.boundingBox;
@@ -462,19 +485,29 @@ function CameraDollyControl(camera, rendererElement, options) {
     var size = bBox.size();
     var center = bBox.center();
     
-    var maxDimension = Math.max(size.x, size.y, size.z); 
+    var objMax = Math.max(size.x, size.y, size.z); 
             
-    var distance = Math.abs(maxDimension / 4 * Math.tan( fov * 2 ));
-        
-    distance *= 1.33;
-    
+    //var distance = Math.abs(maxDimension / 4 * Math.tan( ControlUtils.radians(camera.fov) * 2 ));
+
+    var distance = objMax * 0.5 / Math.tan(ControlUtils.radians(camera.fov) * 0.5);
+
+    console.log("fov", camera.fov);
+    console.log("frustum height", objMax);
+    console.log("distance", distance);
+
+    var vFOV = camera.fov * Math.PI / 180;
+    var visibleHeight = 2 * Math.tan( vFOV * 0.5 ) * distance;
+    console.log("visible height", visibleHeight);
+
     camera.position.z = distance;
     
     cameraDist = distance;
     settings.maxZoom = distance;
-    settings.maxCameraHeight = size.y * .11;
+    //settings.maxCameraHeight = size.y * .11;
 
-    updateZoom();
+   */
+
+
       
   }
   
