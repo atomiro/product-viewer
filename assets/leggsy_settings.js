@@ -1,10 +1,10 @@
 var sceneSettings = {
-	"scene_name" : "artemixNoSeam_V2.json",
-	"scene_path" : "assets/artemixNoSeam_V2.json",
+	"scene_name" : "viewer_noSeamNoScale.json",
+	"scene_path" : "assets/viewer_noSeamNoScale.json",
 	"models" : [
 		{
 			"name" : "XSModel",
-			"scene_object": "artemixXS.js",
+			"scene_object": "artemixXS_noSeamV2.js",
 			"product_type" : "Shells",
 			"maps" : ["normalXS", "gloss512"],
 			"textures" : [],
@@ -12,7 +12,7 @@ var sceneSettings = {
 		},
 		{
 			"name" : "WWBXSModel",
-			"scene_object": "artemixXS_noSeam.js",
+			"scene_object": "artemixXS_noSeamV2.js",
 			"product_type" : "Shells",
 			"maps" : ["wide_waistband_normalXS", "gloss512"],
 			"textures" : [],
@@ -20,7 +20,7 @@ var sceneSettings = {
 		},
 		{
 			"name" : "WWB3XLModel",
-			"scene_object": "artemix3XL_noSeam.js",
+			"scene_object": "artemix3XL_noSeamV3.js",
 			"product_type" : "Shells",
 			"maps" : ["wide_waistband_normal3XL", "gloss512"],
 			"textures" : [],
@@ -52,12 +52,12 @@ var sceneSettings = {
 		{
 			"name": "wide_waistband_normal3XL",
 			"type": "normal",
-			"file": "assets/maps/3XLWWB_2k_norm.png"
+			"file": "assets/maps/viewer_WWB3XL_2k_norm_ridge.jpg"
 		},
 		{
 			"name": "wide_waistband_normalXS",
 			"type": "normal",
-			"file": "assets/maps/XSWWB_2k_norm.png"
+			"file": "assets/maps/viewer_WWBXS_2k_norm_ridge.jpg"
 		}
 	],
 	"textures" : [
