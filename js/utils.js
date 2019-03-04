@@ -2,6 +2,7 @@
   Animation utility functions
   @namespace
 */
+
 var ControlUtils = {
  /**
   constrain a value between min and max
@@ -11,7 +12,7 @@ var ControlUtils = {
   @param {Number} max
   @return {Number}
   */
- clamp: function(value, min, max) {
+  clamp: function(value, min, max) {
  
     var clampedValue = (value > max) ? max : (value < min) ? min : value;
     return clampedValue;
@@ -26,11 +27,18 @@ var ControlUtils = {
   @param {Number} progress - expressed in a fraction between 0 and 1
   @return {Number}
   */
- lerp: function(p0, p1, progress) {
+  lerp: function(p0, p1, progress) {
  
     ControlUtils.clamp(progress, 0, 1);
     var pu = p0 + (p1 - p0) * progress;
     return pu;
+    
+  },
+
+  radians: function(deg) {
+  
+    var rad = deg * (Math.PI/180);
+    return rad;
     
   },
 

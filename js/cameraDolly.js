@@ -54,6 +54,8 @@ function CameraDollyControl(camera, rendererElement, options) {
   var zoomingOut = false;
   
   var progress = 0;
+
+  var scaleFactor = .07;
   
   var self = this;
 
@@ -82,6 +84,13 @@ function CameraDollyControl(camera, rendererElement, options) {
     rendererElement[0].addEventListener('touchmove', onTouchMove, false);
     rendererElement[0].addEventListener('touchend', onTouchEnd, false);
     
+  }
+
+  function updateZoom(){
+
+    self.panLockAt = Math.abs(settings.maxZoom) - 3;
+    zoomThreshold = Math.abs(settings.maxZoom - settings.minZoom / 2);
+
   }
   
   /** @private */
@@ -153,7 +162,7 @@ function CameraDollyControl(camera, rendererElement, options) {
   function autoZoom() {
   
     isAnimating = true;
-    
+
     if (Math.abs(camera.position.z) > zoomThreshold) {
     
       if (progress == 0) {
@@ -314,7 +323,8 @@ function CameraDollyControl(camera, rendererElement, options) {
   
     object.geometry.computeBoundingBox();
     var boundingBox = object.geometry.boundingBox;
-    var center = boundingBox.center().y * .13;
+
+    var center = boundingBox.center().y * object.scale.y;
     
     initHeight = center;
     cameraHeight = center;
@@ -443,29 +453,29 @@ function CameraDollyControl(camera, rendererElement, options) {
   @function
   */
   this.focus = function(object) {
-  
-    centerOnObject(object);
-    
-    // fov in radians 
-    var fov = camera.fov * (Math.PI / 180);
-    
+
     object.geometry.computeBoundingBox();
-        
-    var bBox = object.geometry.boundingBox;
-        
-    var size = bBox.size();
-    var center = bBox.center();
-    
-    var maxDimension = Math.max(size.x, size.y, size.z); 
-            
-    var distance = Math.abs(maxDimension / 4 * Math.tan( fov * 2 ));
-        
-    distance *= 1.33;
-    
+    var boundingBox = object.geometry.boundingBox;
+
+    var objHeight = boundingBox.size().y;
+
+    var fovRadians = ControlUtils.radians(camera.fov);
+
+    var distance = objHeight * 0.5 / Math.tan(fovRadians * 0.5);
+
+    //back the camera up a little bit
+    distance += 4;
+
     camera.position.z = distance;
-    
     cameraDist = distance;
+
     settings.maxZoom = distance;
+
+    settings.maxCameraHeight = objHeight - 1.5;
+
+    updateZoom();
+
+    centerOnObject(object);
       
   }
   

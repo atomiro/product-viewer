@@ -6,55 +6,55 @@
   @return {Viewer} Viewer
   @constructor
 */
-function Viewer(initTexture, element, options) {
+function Viewer(options, sceneSettings) {
+
+  // camera position doesn't really make sense
 
   var settings = {
-  
-    sceneFile: 'models_scene.json',
+    container: $('.viewer'),
     fov: 23,
     aspectRatio: 4/5,
-    cameraXPosition: 35,
-    cameraYPosition: 11.5,
-    initialRotation: 20,
-    sceneBackgroundColor: 'transparent',
+    camHorizontalPosition: 35,
+    camVerticalPosition: 0,
     idleSpeed: 0.006,
-    normalXS: 'assets/maps/viewer_XS_2k_normal.jpg',
-    normal3XL: 'assets/maps/viewer_3XL_2k_normal.jpg',
-    specularXS: 'assets/maps/viewer_XS_2k_specular.jpg',
-    specular3XL: 'assets/maps/viewer_3XL_2k_specular.jpg',
-    lightSpecColor: 0x202020,
-    darkSpecColor: 0xa5a4a6,
-    debug: false
-    
+    debug: false,
+    requestRender: false
   };
   
   // INTERNALS
+  var initialized = false;
+  var loading = true;    
   
   var requestFrame = true;
-  var initialized = false;
   
   var scene;
   var camera;
   var renderer;
+  var rendererElement;
+
+  var canvasWidth;
+  var canvasHeight;
   
   var cameraControl;
-  
-  var meshes = [];
   var meshControl;
     
-  var textures = [];
   var textureManager;
+  var initManager;
   
-  var rendererElement = element;
-  
-  var canvasWidth = rendererElement.width();
-  var canvasHeight = canvasWidth / settings.aspectRatio;
+  var sceneSettings = sceneSettings;
+
+  var currentModel;
+  var currentLighting;
+
+  var meshes = [];
+  var models = []
+  var textures = []
   
   var DEVICE_PIXEL_RATIO = window.devicePixelRatio ?
     window.devicePixelRatio : 1;
   
-  var CAM_FAR_PLANE = 500;
-  var CAM_NEAR_PLANE = 0.1;
+  var CAM_FAR_PLANE = 40;
+  var CAM_NEAR_PLANE = 5;
   
   var self = this;
   
@@ -63,25 +63,30 @@ function Viewer(initTexture, element, options) {
     load scene created with the THREE.js Scene Editor
   */
   function loadScene() {
-      
-    var file = settings.sceneFile;
-    var objloader = new THREE.ObjectLoader();
-        
-    objloader.load(file,
-      init,
+
+    var sceneFile = sceneSettings.scene_path;
+
+    var objLoader = new THREE.ObjectLoader();
+
+    if ( settings.debug ){ console.log("load scene", sceneFile); }
+
+    var loadingPromise = new Promise(function(resolve, reject){
+
+      objLoader.load(sceneFile,
+      resolve,
       function(xhr) {
       
-        var partialPercent = Math.round(xhr.loaded / xhr.total * 75);
+        var percent = xhr.loaded / xhr.total;
         
-        triggerEvent('viewer.progress', {'percent': partialPercent});
+        triggerEvent('viewer.progress', {'percent': percent});
         
       },
-      function(xhr) {
+      reject);
       
-        console.log(xhr);
-        
-      });
+    });
     
+    return loadingPromise;
+
   }
   
   /**
@@ -89,9 +94,13 @@ function Viewer(initTexture, element, options) {
     @param {Object} file - THREE.js Scene json object
   */
   function init(file) {
+    scene = file;
   
     renderer = new THREE.WebGLRenderer({alpha: true, antialias: true});
     renderer.setPixelRatio(DEVICE_PIXEL_RATIO);
+
+    canvasWidth = rendererElement.width();
+    canvasHeight = canvasWidth / settings.aspectRatio;
     renderer.setSize(canvasWidth, canvasHeight);
     
     rendererElement.append(renderer.domElement);
@@ -106,117 +115,32 @@ function Viewer(initTexture, element, options) {
       
       if (bgcolor) {
       
-        file.background = bgcolor;
+        scene.background = bgcolor;
         
       } else {
       
-        file.background = new THREE.Color(0x000000);
+        scene.background = new THREE.Color(0x000000);
         
       }
        
     }
-      
-    scene = file;
     
-    initManager = new THREE.LoadingManager();
+    bindElementControls(rendererElement);
     
-    initManager.onLoad = function() {
-    
-      initScene();
-      
-    };
-    
-    initManager.onProgress = function(url, itemsLoaded, itemsTotal) {
-    
-      if (settings.debug){
-        console.log('INIT Loading file: ' + url +
-        '.\nLoaded ' + itemsLoaded +
-        ' of ' + itemsTotal + ' files.');
-      }
-      
-    };
-    
-    textureManager = new THREE.LoadingManager();
-    
-    textureManager.onError = function(event) {
-    
-      console.log('manager error');
-      console.log(event);
-      
-    };
-    
-    textureManager.onProgress = function(url, itemsLoaded, itemsTotal) {
-    
-      if (settings.debug){
-        console.log('Loading file: ' + url +
-       '.\nLoaded ' + itemsLoaded + ' of '
-       + itemsTotal + ' files.');
-      } 
-     
-    };
-    
-    textureManager.onLoad = function() {
-    
-      if (settings.debug){
-        console.log("texture added");
-      }
-       
-    };
-    
-    loadTexture(initTexture, initManager);
-    
-    loadTexture(settings.normalXS, initManager, 'XS_Normal');
-    loadTexture(settings.specularXS, initManager, 'XS_Specular');
-    loadTexture(settings.normal3XL, initManager, '3XL_Normal');
-    loadTexture(settings.specular3XL, initManager, '3XL_Specular');
+    initMeshControl();
+    initCamera();
+    triggerEvent('viewer.initialized');
+    initialized = true;
 
-  }
-  
-  /** @private */
-  function initScene() {
-  
-    if (initialized == false) {
-    
-        initMeshes();
-        initCamera();
-        
-        useLighting('mid');
-        
-        render();
-        
-        triggerEvent('viewer.loaded');
-      
-        initialized = true;
-        
-      }
-      
-  }
-  
-  /** @private */
-  function initCamera() {
-  
-    camera = new THREE.PerspectiveCamera(settings.fov,
-      settings.aspectRatio, CAM_NEAR_PLANE, CAM_FAR_PLANE);
-    
-    camera.position.z = settings.cameraXPosition;
-    
-    var cameraSettings = {
-    
-      maxZoom: settings.cameraXPosition,
-      maxCameraHeight: meshes[1].geometry.boundingBox.size().y * .115,
-      
+    if (settings.requestRender == false){ 
+      restart(); 
     };
-    
-    cameraControl = new CameraDollyControl(camera,
-      rendererElement, cameraSettings);
-      
-    cameraControl.focus(meshes[0]);
-    
   }
-  
-  /** @private */
-  function initMeshes() {
-    
+
+  function initMeshControl(){
+
+    var options = { idleSpeed: settings.idleSpeed }
+
     for (var i = 0; i < scene.children.length; i++) {
     
         object = scene.children[i];
@@ -224,90 +148,45 @@ function Viewer(initTexture, element, options) {
         if (object.type == 'Mesh') {
         
           meshes.push(object);
-          object.material.map = getTextureByName(initTexture);
-          
-          if (object.name == 'artemix3XLMesh.js') {
-          
-            object.material.normalMap = getTextureByName('3XL_Normal');
-            object.material.specularMap = getTextureByName('3XL_Specular');
-            
-          } else {
-          
-            object.material.normalMap = getTextureByName('XS_Normal');
-            object.material.specularMap = getTextureByName('XS_Specular');
-            
-          }
-          
-          object.geometry.computeBoundingBox();
-          object.rotation.y = radians(settings.initialRotation);
-          
-        }
-        
-      }
-      
-    meshes[1].visible = false;
-    meshes[0].visible = true;
+
+        }  
+    }    
+
+    meshControl = new MeshControl(meshes, rendererElement, options);
+
+  }
+
+  
+  /** @private */
+  function initCamera() {
+  
+    camera = new THREE.PerspectiveCamera(settings.fov,
+             settings.aspectRatio, CAM_NEAR_PLANE, CAM_FAR_PLANE);
     
-    mc_options = { idleSpeed: settings.idleSpeed }
-      
-    meshControl = new MeshControl(meshes, rendererElement, mc_options);
+    camera.position.z = settings.camHorizontalPosition;
+    camera.position.y = settings.camVerticalPosition;
+    
+    cameraControl = new CameraDollyControl(camera, rendererElement);
     
   }
-  
-  /**
-    @private
-    @param {string} style - "Light", "Dark" or "Mid"
-  */
-  function useLighting(style) {
-  
-    // light or dark style
-    
-    style = style.toLowerCase();
-    
-    if (style == 'dark') {
-    
-      specularColor = new THREE.Color(settings.darkSpecColor);
-      
-      for (i=0; i < meshes.length; i++) {
-      
-        meshes[i].material.specular = specularColor;
-        
-      }
-      
-      scene.getObjectByName('DarkDesignLights').visible = true;
-      scene.getObjectByName('BrightDesignLights').visible = false;
-      scene.getObjectByName('MidDesignLights').visible = false;
-      
-    } else if (style == 'light') {
-    
-      specularColor = new THREE.Color(settings.lightSpecColor);
-      
-      for (i=0; i < meshes.length; i++) {
-      
-        meshes[i].material.specular = specularColor;
-        
-      }
-      
-      scene.getObjectByName('BrightDesignLights').visible = true;
-      scene.getObjectByName('DarkDesignLights').visible = false;
-      scene.getObjectByName('MidDesignLights').visible = false;
-      
-    } else if (style == 'mid') {
-    
-      scene.getObjectByName('MidDesignLights').visible = true;
-      scene.getObjectByName('BrightDesignLights').visible = false;
-      scene.getObjectByName('DarkDesignLights').visible = false;
-      
-    } else {
-    
-      scene.getObjectByName('MidDesignLights').visible = true;
-      scene.getObjectByName('BrightDesignLights').visible = false;
-      scene.getObjectByName('DarkDesignLights').visible = false;
-      
-    }
-      
+
+  function getSettings(type, name){
+    var settings;
+
+    settings = sceneSettings[type].filter(function(item){ return item.name == name });
+
+    return settings[0];
   }
-  
+
+  function getModel(name){ 
+   
+   var settings = getSettings("models", name);
+   var object = scene.getObjectByName(settings.scene_object);
+
+   return {mesh: object, settings: settings};
+
+  }
+
   /**
     @private
     @param {string} name - name texture was saved with
@@ -316,117 +195,297 @@ function Viewer(initTexture, element, options) {
   function getTextureByName(name) {
   
     var texture;
+
+    texture = textures.filter(function(item){ return item.name == name });
     
-    for (var i = 0; i < textures.length; i++) {
-    
-      if (textures[i].name == name) {
-      
-        texture = textures[i];
-        
-      }
-      
-    }
-    
-    return texture;
+    return texture[0];
     
   }
-  
-  /**
-    @private
-    @param {string} name - name of mesh objects in scene file
-    @return {THREE.Mesh}
-  */
-  function getMeshByName(name) {
-  
-    var mesh;
-    
-    for (var i = 0; i < meshes.length; i++) {
-    
-      if (meshes[i].name == name) {
+
+  function getTexture(name) {
+
+    var texturePromise;
+
+    if (textureInitialized(name)) {
       
-        mesh = meshes[i];
-        
+      texture = getTextureByName(name);
+
+      texturePromise = Promise.resolve(texture);
+      
+    } else {
+
+      var textureSettings = getSettings("textures", name);
+
+      if (!textureSettings) {
+
+        var textureSettings = getSettings("maps", name);
+
       }
-      
+
+      if (textureSettings) {
+
+        texturePromise = loadTexture(textureSettings.file, textureSettings.name);
+
+      } else {
+       
+       texturePromise = Promise.reject("Settings for texture " + name + " not found.");
+
+      }
+
     }
-    
-    return mesh;
+
+    return texturePromise;
+
+  }
+
+  function loadTexture(url, name){
+
+    if (!name){
+      name = url;
+    }
+
+    var textureLoader = new THREE.TextureLoader();
+
+    var loadingPromise = new Promise(function(resolve, reject){
+
+      textureLoader.load(url, 
+        resolve, 
+        function(response){}, 
+        reject);
+
+    }).then(function(result){
+
+      storeTexture(result, name);
+
+      return result;
+
+    });
+
+    return loadingPromise;
+
+  }
+
+  function initModel(name){
+
+    var model = getModel(name);
+
+    var loadMaps = [];
+
+    for (var i=0; i < model.settings.maps.length; i++){
+
+      var map = getSettings("maps", model.settings.maps[i]);
+
+      if (map) {
+
+        var loadMap = getTexture(map.name);
+
+        loadMaps.push(loadMap);
+
+      }
+
+    }
+
+    if (loadMaps.length != model.settings.maps.length){
+
+      return Promise.reject("Expected "+ model.settings.maps.length + "settings for maps, found " + loadMaps.length);
+
+    }
+
+    return Promise.all(loadMaps).then(function(){
+
+      applyMaps(model);
+         
+      if (!modelInitialized(name)){ 
+
+        if (settings.debug){ console.log("initModel", name); } 
+        models.push(name);
+
+      }
+
+      return model;
+
+    });
+
+  }
+
+  function displayModel(name){
+
+    initModel(name).then(function(model){
+
+        currentModel = name;
+
+        cameraControl.focus(model.mesh);
+
+        display("models", name);
+
+    }).catch(function(err){
+  
+       console.log(err);
+       triggerEvent('viewer.error', { message: err });
+
+    });
     
   }
-  
-  /**
-    @private
-    @param {Array|string} paths - Array of file paths
-  */
-  function loadTextures(paths) {
-  
-    for (var i = 0; i < paths.length; i++) {
+
+  function displayTexture(name){
     
-        loadTexture(paths[i], textureManager);
-        
-     }
+    var model = getModel(currentModel);
+
+    var textureSettings = getSettings("textures", name);
+
+    getTexture(name).then(function(texture){
+
+      renderTexture(texture, model.mesh);
+
+      useLighting(textureSettings.lighting, model.mesh); 
+
+      triggerEvent('viewer.switchtexture');
+
+      if (settings.debug){
+        console.log("applied "+ name +" to: " + model.mesh.name );
+      }
+
+    }).catch(function(err){
+
+      console.log(err);
+      triggerEvent('viewer.error', { message: err });
+
+    });
+  }
+
+  function displayModelWithTexture(modelName, textureName){
+
+    var textureSettings = getSettings("textures", textureName);
+
+    var loadTextures = [initModel(modelName), getTexture(textureName)];  
+
+    Promise.all(loadTextures).then(function(result){
+
+        var model = result[0];
+        var texture = result[1];
+
+        currentModel = modelName;
+
+        useLighting(textureSettings.lighting, model.mesh); 
+
+        renderTexture(texture, model.mesh);
+
+        cameraControl.focus(model.mesh);
+
+        display("models", modelName);
+
+        triggerEvent('viewer.switchtexture');
+
+    }).catch(function(err){
+
+      console.log(err);
+      triggerEvent('viewer.error', { message: err });
+
+    });
+    
+  }
+
+  function applyMaps(model){
+       
+    for (var i=0; i < model.settings.maps.length; i++){
+         
+      var mapName = model.settings.maps[i];
+      var map = getTextureByName(mapName);
+
+      var mapSettings = getSettings("maps", mapName);
+      mapType = mapSettings.type; 
+         
+      if (mapType == "normal") {
+
+        model.mesh.material.normalMap = map;
+
+      } else if (mapType == "specular") {
+
+        model.mesh.material.specularMap = map;
+
+      }
+
+    }
+
+  }
+
+  function modelInitialized(modelName){
+
+    var init = false;
+  
+    if (models.indexOf(modelName) != -1) {
+
+      init = true;
+
+    }
+
+    return init;
+
+  }
+
+  function textureInitialized(textureName){
+
+    var init = false;
+
+    var texture = getTextureByName(textureName);
+
+    if (texture) { init = true }; 
+
+    return init;
+  }
+
+  function display(type, name){
+
+    var settings = getSettings(type, name);
+    var sceneObject = settings.scene_object;
+    var objectSettings = sceneSettings[type];
+
+    for (var i=0; i < objectSettings.length; i++){ 
+  
+      var object = scene.getObjectByName(objectSettings[i].scene_object);
+  
+      if (object) {
+
+        if (object.name == sceneObject) {
+
+          object.visible = true;
+
+        } else {
+
+          object.visible = false;
+
+        }
+
+      }
+
+    }
+
+  }
+
+  function useLighting(name, mesh){
+
+    if (!(currentLighting == name)) {
      
-  }
-  
-  /**
-    @private
-    @param {string} path - file path to texture
-    @param {THREE.LoadingManager} manager - THREE.js loading manager
-    @param {string} name - override current file name when
-    saving it as a texture
-  */
-  function loadTexture(path, manager, name) {
-  
-    textureLoader = new THREE.TextureLoader(manager);
-    
-    textureLoader.load(
-      path,
-      function(texture) {
-      
-         if (name) {
-         
-            storeTexture(texture, name);
-            
-          } else {
-          
-            storeTexture(texture, path);
-            
-          }
-          
-      },
-      function(xhr) {
-         
-         var percentage = Math.round(xhr.loaded / xhr.total * 100);
-           
-         partialPercent = Math.round(percentage * .25) + 75;
-         triggerEvent('viewer.progress', {'percent': partialPercent});
-         
-         if (settings.debug){
-         
-           console.log('Texture ' + path + ' ' + percentage + '%');
-         
-         }
-         
-      },
-      function(xhr) {
-      
-        console.log('loader error');
-        console.log(xhr);
+      lighting = getSettings("lighting", name);
+
+      if (lighting.specular_color) {
+
+        var specularColor = new THREE.Color(Number(lighting.specular_color));
+
+        mesh.material.specular = specularColor;
+
+      }
+
+      display("lighting", name);
+
+      if (settings.debug){
+        console.log("useLighting", name);
+      }
+
+      currentLighting = name;
         
-      });
-    
-  }
-  
-  /**
-    @private
-    @param {THREE.Texture} texture - THREE.js texture object
-    @param {string} name - name to save the texture with
-  */
-  function storeTexture(texture, name) {
-  
-    texture.name = name;
-    textures.push(texture);
-    
+    }
+
   }
   
   /**
@@ -434,16 +493,10 @@ function Viewer(initTexture, element, options) {
     @param {THREE.Texture} texture - THREE.js texture object
     @param {THREE.Mesh} mesh - THREE.js mesh object
   */
-  function renderTexture(texture) {
-  
-    for (var i = 0; i < meshes.length; i++) {
-    
-      var mesh = meshes[i];
-      texture.needsUpdate = true;
-      mesh.material.map = texture;
-      
-    }
-    
+  function renderTexture(texture, mesh) {
+
+      mesh.material.map = texture;  
+      mesh.material.needsUpdate = true;
   }
   
   /**
@@ -502,7 +555,7 @@ function Viewer(initTexture, element, options) {
   }
   
   /** @private */
-  function onMouseDown() {
+  function onMouseDown(element) {
   
      element.addClass('viewer-interacting');
      element.removeClass('viewer-interact');
@@ -510,7 +563,7 @@ function Viewer(initTexture, element, options) {
    }
    
    /** @private */
-   function onMouseUp() {
+   function onMouseUp(element) {
    
      mouseDown = false;
      element.removeClass('viewer-interacting');
@@ -519,7 +572,7 @@ function Viewer(initTexture, element, options) {
    }
    
    /** @private */
-   function onMouseOut() {
+   function onMouseOut(element) {
    
      element.removeClass('viewer-interacting');
      element.addClass('viewer-interact');
@@ -533,34 +586,38 @@ function Viewer(initTexture, element, options) {
   */
   function triggerEvent(eventName, detail){
 
-    element = $(element);
-
     try {
 
       event = $.Event(eventName); 
 
-      if (detail){
+     if (detail){
 
         event.detail = detail;
 
       }
-
-      element.trigger(event);
-
+      
+      requestAnimationFrame(function(){
+        rendererElement.trigger(event);
+      });
+    
     } catch (e) {  
 
       console.warn("Modern Event API not supported", e);
-      
+    
       var event = document.createEvent('CustomEvent');
 
       event.initCustomEvent(eventName, true, true, detail)
     
-      var elementClass =  element.attr('class');
+      var elementClass =  rendererElement.attr('class');
 
       eventElement = document.getElementsByClassName(elementClass)[0];
-      eventElement.dispatchEvent(event);
+
+      requestAnimationFrame(function(){
+        eventElement.dispatchEvent(event);
+      });
 
     }
+    
 
   }
   
@@ -569,23 +626,33 @@ function Viewer(initTexture, element, options) {
     @param {number} deg - degrees
     @return {number} radians
   */
-  function radians(deg) {
-  
-    var rad = deg * (Math.PI/180);
-    return rad;
-    
-  }
   
   /** private */
-  function mouseFeedbackListeners() {
+  function mouseFeedbackListeners(element) {
   
     element.addClass('viewer-interact');
    
-    element.mousedown(onMouseDown);
-    element.mouseup(onMouseUp);
-    element.mouseleave(onMouseOut);
+    element.mousedown(function(){
+       onMouseDown(element);
+     });
+    element.mouseup(function(){
+      onMouseUp(element);
+    });
+    element.mouseleave(function(){
+      onMouseOut(element);
+    });
     
   }
+
+  function bindElementControls(element){
+    $(window).resize(function() {
+     
+      debounceResize(element);
+      
+    });
+    
+    mouseFeedbackListeners(element);
+  };
    
   /**
    create a Viewer
@@ -594,31 +661,40 @@ function Viewer(initTexture, element, options) {
   this.create = function() {
   
     $.extend(settings, options);
-    
-    loadScene();
-    
-    $(window).resize(function() {
-     
-      debounceResize(element);
-      
-    });
-    
-    mouseFeedbackListeners();
-    
-  };
-  
-  /**
-   Display a saved texture using the name it was saved with.
-   @function
-   @param {string} name - name the texture was saved with
-   */
-  this.displayTexture = function(name) {
-  
-    renderTexture(getTextureByName(name));
-    
-    triggerEvent('viewer.switchtexture');
+
+    rendererElement = settings.container; 
+
+    if (self.checkRenderingContext() == true) {
+
+      loadScene().then(function(scene){
+
+        init(scene);
+
+      }).catch(function(err){
+        
+         console.log(err);
+         triggerEvent("viewer.error", {message: err });
+
+      });
+
+    } else {
+
+      triggerEvent("viewer.error", {message: "WebGL unavailable"});
+
+    }
     
   };
+
+  function storeTexture(texture, name) {
+ 
+    if (settings.debug){
+      console.log("loaded texture:", name);
+    }
+    
+    texture.name = name;
+    textures.push(texture);
+  
+  }
   
   /**
    Create and save a texture using an HTML image or canvas element, then
@@ -649,34 +725,12 @@ function Viewer(initTexture, element, options) {
     storeTexture(texture, name);
     
   };
-  
-  /**
-    Display a model by size name, "XS" or "3XL"
-    @function
-    @param {string} size - accepts "XS" or "3XL"
-  */
-  this.displayModel = function(size) {
-    
-    var plusModel = getMeshByName('artemix3XLMesh.js');
-    var straightModel = getMeshByName('artemixXSMesh.js');
-    
-    if (size == 'XS') {
-    
-      straightModel.visible = true;
-      plusModel.visible = false;
-      cameraControl.focus(straightModel);
-      
-    } else if (size == '3XL') {
-    
-      plusModel.visible = true;
-      straightModel.visible = false;
-      cameraControl.focus(plusModel);
-      
-    }
-    
-    triggerEvent('viewer.togglemodel');
-    
-  };
+
+  this.displayModel = displayModel;
+
+  this.displayTexture = displayTexture;
+
+  this.displayModelWithTexture = displayModelWithTexture;
   
   /**
     Bind listeners for the mouse and touch controls
@@ -727,18 +781,26 @@ function Viewer(initTexture, element, options) {
     meshControl.idle();
     
   }
+
+  this.checkRenderingContext = function (){
+ 
+    // Create canvas element. The canvas is not added to the
+    // document itself, so it is never displayed in the
+    // browser window.
+
+    var canvas = document.createElement("canvas");
+    // Get WebGLRenderingContext from canvas element.
+    var gl = canvas.getContext("webgl") 
+      || canvas.getContext("experimental-webgl");
+    // Report the result.
+    if (gl && gl instanceof WebGLRenderingContext) {
+      return true;
+    } else {
+      return false;
+    }
+    
   
-  /**
-    Add an array of textures
-    @function
-  */
-  this.addTextures = loadTextures;
-  
-  /**
-    Change lighting set
-    @function
-  */
-  this.useLighting = useLighting;
+  }
   
   this.create();
   
