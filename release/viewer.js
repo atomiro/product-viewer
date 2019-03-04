@@ -461,10 +461,10 @@ function CameraDollyControl(camera, rendererElement, options) {
 
     var fovRadians = ControlUtils.radians(camera.fov);
 
-     var distance = objHeight * 0.5 / Math.tan(fovRadians * 0.5);
+    var distance = objHeight * 0.5 / Math.tan(fovRadians * 0.5);
 
-     //back the camera up a little bit
-     distance += 4;
+    //back the camera up a little bit
+    distance += 4;
 
     camera.position.z = distance;
     cameraDist = distance;
@@ -474,8 +474,6 @@ function CameraDollyControl(camera, rendererElement, options) {
     settings.maxCameraHeight = objHeight - 1.5;
 
     updateZoom();
-
-    console.log(objHeight, distance);
 
     centerOnObject(object);
       
@@ -1516,48 +1514,42 @@ function Viewer(options, sceneSettings) {
 
     var model = getModel(name);
 
-    if (!modelInitialized(name)){
+    var loadMaps = [];
 
-      if (settings.debug){ console.log("initModel", name); }
+    for (var i=0; i < model.settings.maps.length; i++){
 
-      var loadMaps = [];
+      var map = getSettings("maps", model.settings.maps[i]);
 
-      for (var i=0; i < model.settings.maps.length; i++){
+      if (map) {
 
-        var map = getSettings("maps", model.settings.maps[i]);
+        var loadMap = getTexture(map.name);
 
-        if (map) {
-
-          var loadMap = getTexture(map.name);
-
-          loadMaps.push(loadMap);
-
-        }
+        loadMaps.push(loadMap);
 
       }
-
-      if (loadMaps.length != model.settings.maps.length){
-
-        return Promise.reject("Expected "+ model.settings.maps.length + "settings for maps, found " + loadMaps.length);
-
-      }
-
-      return Promise.all(loadMaps).then(function(){
-
-         applyMaps(model);
-
-         models.push(name);
-
-         return model;
-
-      });
-
-    } else {
-
-       return Promise.resolve(model);
 
     }
 
+    if (loadMaps.length != model.settings.maps.length){
+
+      return Promise.reject("Expected "+ model.settings.maps.length + "settings for maps, found " + loadMaps.length);
+
+    }
+
+    return Promise.all(loadMaps).then(function(){
+
+      applyMaps(model);
+         
+      if (!modelInitialized(name)){ 
+
+        if (settings.debug){ console.log("initModel", name); } 
+        models.push(name);
+
+      }
+
+      return model;
+
+    });
 
   }
 

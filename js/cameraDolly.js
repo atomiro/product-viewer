@@ -475,8 +475,6 @@ function CameraDollyControl(camera, rendererElement, options) {
 
     updateZoom();
 
-    console.log(objHeight, distance);
-
     centerOnObject(object);
       
   }
