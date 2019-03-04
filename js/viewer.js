@@ -53,7 +53,7 @@ function Viewer(options, sceneSettings) {
   var DEVICE_PIXEL_RATIO = window.devicePixelRatio ?
     window.devicePixelRatio : 1;
   
-  var CAM_FAR_PLANE = 500;
+  var CAM_FAR_PLANE = 40;
   var CAM_NEAR_PLANE = 5;
   
   var self = this;
