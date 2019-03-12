@@ -294,6 +294,13 @@ function Viewer(options, sceneSettings) {
     return Promise.all(loadMaps).then(function(){
 
       applyMaps(model);
+
+      if (model.settings.color){
+
+        var color = new THREE.Color(Number(model.settings.color));
+        model.mesh.material.color = color;
+        
+      }
          
       if (!modelInitialized(name)){ 
 
@@ -316,7 +323,15 @@ function Viewer(options, sceneSettings) {
 
         cameraControl.focus(model.mesh);
 
+        if (model.settings.lighting) {
+
+          useLighting(model.settings.lighting, model.mesh);
+
+        }
+
         display("models", name);
+
+        triggerEvent("viewer.modelready");
 
     }).catch(function(err){
   

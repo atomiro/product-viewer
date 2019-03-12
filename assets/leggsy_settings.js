@@ -2,6 +2,14 @@ var sceneSettings = {
 	"scene_name" : "viewer_noSeamNoScale.json",
 	"scene_path" : "assets/viewer_noSeamNoScale.json",
 	"models" : [
+	    {
+	    	"name" : "BlackXS",
+	    	"scene_object": "artemixXS_noSeamV2.js",
+	    	"product_type" : "Shells",
+	    	"maps" : ["wide_waistband_normalXS", "gloss512"],
+	    	"color": "0x000000",
+	    	"lighting": "darkDesignLights"
+	    },
 		{
 			"name" : "XSModel",
 			"scene_object": "artemixXS_noSeamV2.js",

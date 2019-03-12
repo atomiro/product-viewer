@@ -20,10 +20,13 @@
       var viewer;
     
       var isRendering = false;
+
+      var bgColor = "rgb(228, 70, 153)"
+      //bgColor = "rgb(0, 0, 0)";
     
       var viewSettings = { 
         container: $('.preview'),
-        sceneBackgroundColor: "rgb(100, 20, 100)",
+        sceneBackgroundColor: bgColor,
         idleSpeed: 0.004,
         debug: true,
         requestRender: true,
@@ -35,7 +38,13 @@
 
       viewerDiv.on('viewer.initialized', function(){
         console.log('viewer init');
-        viewer.displayModelWithTexture("WWB3XLModel", "Bismuth");
+        //viewer.displayModelWithTexture("WWB3XLModel", "Bismuth");
+        viewer.displayModel("BlackXS");
+      });
+
+      viewerDiv.one('viewer.modelready', function(){
+        $(this).addClass("show-viewer"); 
+        viewer.start();
       });
       
       viewerDiv.one('viewer.switchtexture', function(){ 

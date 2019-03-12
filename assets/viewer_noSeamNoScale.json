@@ -34,7 +34,7 @@
 			"emissive": 0,
 			"specular": 5066061,
 			"shininess": 5,
-			"map": "BF9EAA13-E79C-4BF1-8B83-529505A1CB3E",
+			"map": "",
 			"depthFunc": 3,
 			"depthTest": true,
 			"depthWrite": true,
