@@ -1,6 +1,6 @@
 var sceneSettings = {
-	"scene_name" : "viewer_noSeamNoScale.json",
-	"scene_path" : "assets/viewer_noSeamNoScale.json",
+	"scene_name" : "artemixScene_3-4-2019.json",
+	"scene_path" : "assets/artemixScene_3-4-2019.json",
 	"models" : [
 	    {
 	    	"name" : "BlackXS",
@@ -14,7 +14,7 @@ var sceneSettings = {
 			"name" : "XSModel",
 			"scene_object": "artemixXS_noSeamV2.js",
 			"product_type" : "Shells",
-			"maps" : ["normalXS", "gloss512"],
+			"maps" : ["normalXS", "glossXS"],
 			"textures" : [],
 			"rotation" : "20"
 		},
@@ -58,6 +58,16 @@ var sceneSettings = {
            "file" : "assets/maps/gloss_512.png"
 		},
 		{
+          "name" : "glossXS",
+           "type" : "specular",
+           "file" : "assets/maps/viewer_XS_2k_specular.jpg"
+		},
+		{
+          "name": "normalXS",
+		  "type": "normal",
+		  "file": "assets/maps/viewer_XS_2k_normal.jpg"
+		},
+		{
 			"name": "wide_waistband_normal3XL",
 			"type": "normal",
 			"file": "assets/maps/viewer_WWB3XL_2k_norm_ridge.jpg"
@@ -69,6 +79,12 @@ var sceneSettings = {
 		}
 	],
 	"textures" : [
+	    {
+	    	"name" : "MirrorMirrorCardinal",
+	    	"swappable" : true,
+	    	"file" : "assets/MirrorMirror-Cardinal-V1S13b.jpg",
+            "lighting": "defaultLighting"
+	    },
 		{ "name": "Azalea",
 		  "swappable" : true,
 		  "file" : "assets/Azalea-V1S13-01.jpg",
