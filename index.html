@@ -8,6 +8,7 @@
     <title>simple threejs design preview</title>
     <link href="highlight/prism.css" rel="stylesheet" type="text/css"/>
     <link href="assets/basic.css" rel="stylesheet" type="text/css"/>
+    <link href="assets/viewer.css" rel="stylesheet" type="text/css"/>
     <script src="https://code.jquery.com/jquery-3.1.0.min.js" integrity="sha256-cCueBR6CsyA4/9szpPfrX3s49M9vUU5BgtiJj06wt/s=" crossorigin="anonymous"></script>
     <script src="https://cdn.jsdelivr.net/lodash/4.16.4/lodash.min.js"></script>
     <script src="vendor/three.js"></script>
@@ -16,69 +17,25 @@
     <script type="text/javascript">
     
     $(document).ready( function(){
-
-      var viewer;
     
-      var isRendering = false;
+      var isRendering = true;
 
-      //var bgColor = "rgb(228, 70, 153)"
-      bgColor = "rgb(0, 0, 0)";
+      var bgColor = "rgb(255, 255, 255)";
     
       var viewSettings = { 
         container: $('.preview'),
         sceneBackgroundColor: bgColor,
         idleSpeed: 0.004,
         debug: true,
-        requestRender: true,
         fov: 23
       }
       
       var viewerDiv = $('.preview');
-      viewer = new Viewer(viewSettings, sceneSettings);
+      var viewer = new Viewer(viewSettings, sceneSettings);
+      var ui = new ViewerUI(viewer);
 
-      viewerDiv.on('viewer.initialized', function(){
-        console.log('viewer init');
-        viewer.displayModelWithTexture("XSModel", "MirrorMirrorCardinal");
-        //viewer.displayModel("BlackXS");
-      });
+      console.log(viewer);
 
-      viewerDiv.one('viewer.modelready', function(){
-        $(this).addClass("show-viewer"); 
-        viewer.start();
-      });
-      
-      viewerDiv.one('viewer.switchtexture', function(){ 
-        $(this).addClass("show-viewer"); 
-        viewer.start();
-        isRendering = true;
-      });
-
-      viewerDiv.on('viewer.error', function(error){
-        console.log("error", error);
-        $(this).removeClass("show-viewer"); 
-
-        $('.error').append("<p>"+ error.detail.message +"</p>");
-        $('.error').addClass('show');
-      });
-      
-      $('.switch-model').click( function(){
-        var model = $(this).data('model');
-        viewer.displayModel(model);
-      });
-      
-      $('.show-texture').click( function(){
-        texture = $(this).data('texture');
-        viewer.displayTexture(texture);
-      });
-
-      $('.switch-model-texture').click(function(){
-        
-        var texture = $(this).data('texture');
-        var model = $(this).data('model');
-
-        viewer.displayModelWithTexture(model, texture);
-
-      });
       
       $('.idle').click(function(){
         viewer.idle();
@@ -97,63 +54,8 @@
       });
       
     });
+
     </script>
-    
-    <style type="text/css">
-     .preview { 
-	    height: 100%;
-	    width: 50%;
-	    opacity: 0;
-	    
-	    -webkit-transition: opacity .3s ease-in-out;
-        -moz-transition: opacity .3s ease-in-out;
-        -o-transition: opacity .3s ease-in-out;
-        transition: opacity .3s ease-in-out;
-        
-        -webkit-user-select: none;
-        user-select: none;
-        -webkit-tap-highlight-color: rgba(0,0,0,0);
-	  }
-	  
-	  canvas {
-	    width: 100%;
-	    height: 100%;
-	    user-select: none;
-	    -webkit-user-select: none;
-	    -moz-user-select: none;
-	    -ms-user-select: none;
-	   }
-	   
-	   .show-viewer {
-	     opacity: 1;
-	   }
-	   
-	   .viewer-interact {
-	     cursor: grab;
-	     cursor: -webkit-grab;
-	   }
-	   
-	   .viewer-interacting {
-	     cursor: grabbing;
-	     cursor: -webkit-grabbing;
-	   }
-
-     .error {
-      display: none;
-      border: 1px solid #fff;
-     }
-
-     .show {
-      display: block;
-     }
-	   
-	   @media screen and (max-width: 530px){
-	     .preview { 
-	       height: 100%;
-	       width: 100%;
-	      }
-	   }
-    </style>
 </head>
 
 <body>
@@ -161,31 +63,30 @@
   <h1>Design Viewer</h1>
 
   <div class="preview"></div>
-  <div class="error">Sorry, an error has occurred.</div>
 
   <div class="controls">
     <button class="render-control">Stop</button>
     
     <p>
-     <button class="switch-model" data-model="WWBXSModel">XS Model</button>
-     <button class="switch-model" data-model="WWB3XLModel">3XL Model</button>
+     <button class="viewer-ui" data-model="WWBXSModel">XS Model</button>
+     <button class="viewer-ui" data-model="WWB3XLModel">3XL Model</button>
     </p> 
 
     <p>
-      <button class="switch-model-texture" data-model="WWBXSModel" data-texture="Azalea">
+      <button class="viewer-ui" data-model="WWBXSModel" data-texture="Azaleaa">
       XS Model / Azalea</button>
-      <button class="switch-model-texture" data-model="WWBXSModel" data-texture="Bismuth">
+      <button class="viewer-ui" data-model="WWBXSModel" data-texture="Bismuth">
       XS Model / Bismuth</button>
-       <button class="switch-model-texture" data-model="WWB3XLModel" data-texture="Azalea">
+       <button class="viewer-ui" data-model="WWB3XLModel" data-texture="Azalea">
       3X Model / Azalea</button>
-      <button class="switch-model-texture" data-model="WWB3XLModel" data-texture="Bismuth">
+      <button class="viewer-ui" data-model="WWB3XLModel" data-texture="Bismuth" data-default-view >
       3X Model / Bismuth</button>
     </p>  
    
    <p>
-     <button class="show-texture" 
+     <button class="viewer-ui" 
      data-texture="Azalea">Azalea</button>
-     <button class="show-texture" 
+     <button class="viewer-ui" 
      data-texture="Bismuth">Bismuth</button>
    </p>  
    
@@ -193,13 +94,6 @@
      <button class="idle">Spin</button>
    </p>
    
-   <h3>Controls</h3>
-   <p>
-     Scroll wheel or two fingered scroll to zoom in and out.
-   </p>
-   <p>
-     Click + drag to rotate the model and pan the camera. 
-   </p>
   </div>
 
 </html>

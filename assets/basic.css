@@ -1,5 +1,5 @@
 body{
-  background-color: rgb(23, 24, 20);
+  background-color: rgb(25, 0, 25);
   color: #eee;
   font-family: "Arial", sans-serif;
 }
@@ -43,4 +43,31 @@ p {
   background-color: #ccc;
   border-radius: 5px;
   padding: 20px;
+}
+
+.preview { 
+  position: relative;
+  height: 100%;
+  width: 50%;
+      
+  -webkit-transition: opacity .3s ease-in-out;
+  -moz-transition: opacity .3s ease-in-out;
+  -o-transition: opacity .3s ease-in-out;
+  transition: opacity .3s ease-in-out;
+        
+  -webkit-user-select: none;
+  user-select: none;
+  -webkit-tap-highlight-color: rgba(0,0,0,0);
+}
+
+button.viewer-ui {
+  color: #000;
+  background: linear-gradient(#ed4699, #ed44DD);
+  border: 1px solid #FFF;
+  border-radius: 12px;
+  padding: 6px 8px;
+  font-size: 16px;
+  font-weight: bold;
+} 
+     
 }

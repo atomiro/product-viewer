@@ -8,7 +8,7 @@
 */
 function Viewer(options, sceneSettings) {
 
-  // camera position doesn't really make sense
+  // TK camera position doesn't really make sense
 
   var settings = {
     container: $('.viewer'),
@@ -16,7 +16,7 @@ function Viewer(options, sceneSettings) {
     aspectRatio: 4/5,
     camHorizontalPosition: 35,
     camVerticalPosition: 0,
-    idleSpeed: 0.006,
+    idleSpeed: 0.004,
     debug: false,
     requestRender: false
   };
@@ -57,6 +57,8 @@ function Viewer(options, sceneSettings) {
   var CAM_NEAR_PLANE = 5;
   
   var self = this;
+
+  this.element = null;
   
   /**
     @private
@@ -569,31 +571,6 @@ function Viewer(options, sceneSettings) {
     
   }
   
-  /** @private */
-  function onMouseDown(element) {
-  
-     element.addClass('viewer-interacting');
-     element.removeClass('viewer-interact');
-     
-   }
-   
-   /** @private */
-   function onMouseUp(element) {
-   
-     mouseDown = false;
-     element.removeClass('viewer-interacting');
-     element.addClass('viewer-interact');
-     
-   }
-   
-   /** @private */
-   function onMouseOut(element) {
-   
-     element.removeClass('viewer-interacting');
-     element.addClass('viewer-interact');
-     
-   }
-  
   /**
     @private
     @param {string} eventName - name the event
@@ -635,38 +612,15 @@ function Viewer(options, sceneSettings) {
     
 
   }
-  
-  /**
-    @private
-    @param {number} deg - degrees
-    @return {number} radians
-  */
-  
-  /** private */
-  function mouseFeedbackListeners(element) {
-  
-    element.addClass('viewer-interact');
-   
-    element.mousedown(function(){
-       onMouseDown(element);
-     });
-    element.mouseup(function(){
-      onMouseUp(element);
-    });
-    element.mouseleave(function(){
-      onMouseOut(element);
-    });
-    
-  }
 
   function bindElementControls(element){
+
     $(window).resize(function() {
      
       debounceResize(element);
       
     });
-    
-    mouseFeedbackListeners(element);
+  
   };
    
   /**
@@ -679,11 +633,13 @@ function Viewer(options, sceneSettings) {
 
     rendererElement = settings.container; 
 
+    this.element = rendererElement;
+
     if (self.checkRenderingContext() == true) {
 
       loadScene().then(function(scene){
 
-        init(scene);
+        init(scene); //TK swap the names init and create
 
       }).catch(function(err){
         

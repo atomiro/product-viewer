@@ -1,6 +1,6 @@
 var sceneSettings = {
-	"scene_name" : "artemixScene_3-4-2019.json",
-	"scene_path" : "assets/artemixScene_3-4-2019.json",
+	"scene_name" : "artemixScene_3-14-2019.json",
+	"scene_path" : "assets/artemixScene_3-14-2019.json",
 	"models" : [
 	    {
 	    	"name" : "BlackXS",
