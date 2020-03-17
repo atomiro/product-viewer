@@ -1,8 +1,7 @@
 /**
-  Viewer creates a 3D render using an initial texture with an html element
-  @param {string} initTexture - path to a texture to initialize with
-  @param {Object} element - HTML element selected with JQuery
+  Viewer creates a 3D render
   @param {Object} options - options object
+  @param {Object} sceneSettings - options object
   @return {Viewer} Viewer
   @constructor
 */
@@ -62,7 +61,6 @@ function Viewer(options, sceneSettings) {
   
   /**
     @private
-    load scene created with the THREE.js Scene Editor
   */
   function loadScene() {
 
@@ -139,6 +137,7 @@ function Viewer(options, sceneSettings) {
     };
   }
 
+  /** @private */
   function initMeshControl(){
 
     var options = { idleSpeed: settings.idleSpeed }
@@ -172,6 +171,7 @@ function Viewer(options, sceneSettings) {
     
   }
 
+  /** @private */
   function getSettings(type, name){
     var settings;
 
@@ -180,6 +180,7 @@ function Viewer(options, sceneSettings) {
     return settings[0];
   }
 
+  /** @private */
   function getModel(name){ 
    
    var settings = getSettings("models", name);
@@ -204,6 +205,7 @@ function Viewer(options, sceneSettings) {
     
   }
 
+  /** @private */
   function getTexture(name) {
 
     var texturePromise;
@@ -240,6 +242,7 @@ function Viewer(options, sceneSettings) {
 
   }
 
+  /** @private */
   function loadTexture(url, name){
 
     if (!name){
@@ -267,6 +270,7 @@ function Viewer(options, sceneSettings) {
 
   }
 
+  /** @private */
   function initModel(name){
 
     var model = getModel(name);
@@ -317,6 +321,7 @@ function Viewer(options, sceneSettings) {
 
   }
 
+  /** @private */
   function displayModel(name){
 
     initModel(name).then(function(model){
@@ -344,6 +349,7 @@ function Viewer(options, sceneSettings) {
     
   }
 
+  /** @private */
   function displayTexture(name){
     
     var model = getModel(currentModel);
@@ -370,6 +376,7 @@ function Viewer(options, sceneSettings) {
     });
   }
 
+  /** @private */
   function displayModelWithTexture(modelName, textureName){
 
     var textureSettings = getSettings("textures", textureName);
@@ -402,6 +409,7 @@ function Viewer(options, sceneSettings) {
     
   }
 
+  /** @private */
   function applyMaps(model){
        
     for (var i=0; i < model.settings.maps.length; i++){
@@ -425,7 +433,8 @@ function Viewer(options, sceneSettings) {
     }
 
   }
-
+  
+  /** @private */
   function modelInitialized(modelName){
 
     var init = false;
@@ -440,6 +449,7 @@ function Viewer(options, sceneSettings) {
 
   }
 
+  /** @private */
   function textureInitialized(textureName){
 
     var init = false;
@@ -451,6 +461,7 @@ function Viewer(options, sceneSettings) {
     return init;
   }
 
+  /** @private */
   function display(type, name){
 
     var settings = getSettings(type, name);
@@ -479,6 +490,7 @@ function Viewer(options, sceneSettings) {
 
   }
 
+  /** @private */
   function useLighting(name, mesh){
 
     if (!(currentLighting == name)) {
@@ -514,6 +526,18 @@ function Viewer(options, sceneSettings) {
 
       mesh.material.map = texture;  
       mesh.material.needsUpdate = true;
+  }
+
+  /** @private */
+  function storeTexture(texture, name) {
+ 
+    if (settings.debug){
+      console.log("loaded texture:", name);
+    }
+    
+    texture.name = name;
+    textures.push(texture);
+  
   }
   
   /**
@@ -613,6 +637,7 @@ function Viewer(options, sceneSettings) {
 
   }
 
+  /** @private */
   function bindElementControls(element){
 
     $(window).resize(function() {
@@ -655,17 +680,6 @@ function Viewer(options, sceneSettings) {
     }
     
   };
-
-  function storeTexture(texture, name) {
- 
-    if (settings.debug){
-      console.log("loaded texture:", name);
-    }
-    
-    texture.name = name;
-    textures.push(texture);
-  
-  }
   
   /**
    Create and save a texture using an HTML image or canvas element, then
@@ -697,10 +711,26 @@ function Viewer(options, sceneSettings) {
     
   };
 
+  /**
+    Display a model
+    @function
+    @param {string} name - name of the model, as specified in the scene settings 
+  */
   this.displayModel = displayModel;
 
+  /**
+    Display a texture on the current model
+    @function
+    @param {string} name - name of the texture, as specified in the scene settings 
+  */
   this.displayTexture = displayTexture;
 
+  /**
+    Display a texture on a specific model
+    @function
+    @param {string} textureName - name of the texture, as specified in the scene settings 
+    @param {string} modelName - name of the model, as specified in the scene settings 
+  */
   this.displayModelWithTexture = displayModelWithTexture;
   
   /**
@@ -737,7 +767,7 @@ function Viewer(options, sceneSettings) {
   };
   
   /**
-    Stop render and remove controls
+    Stop render and remove controls.
     @function
   */
   this.stop = function() {
@@ -746,18 +776,22 @@ function Viewer(options, sceneSettings) {
     self.unbindControls();
     
   };
-  
+
+  /**
+    Spin the models slowly.
+    @function
+  */
   this.idle = function(){
   
     meshControl.idle();
     
   }
 
+  /**
+    Creates a canvas element to get the context and check whether it has WebGL capabilities. 
+    @function
+  */
   this.checkRenderingContext = function (){
- 
-    // Create canvas element. The canvas is not added to the
-    // document itself, so it is never displayed in the
-    // browser window.
 
     var canvas = document.createElement("canvas");
     // Get WebGLRenderingContext from canvas element.
