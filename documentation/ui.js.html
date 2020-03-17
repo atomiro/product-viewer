@@ -1,0 +1,421 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <title>JSDoc: Source: ui.js</title>
+
+    <script src="scripts/prettify/prettify.js"> </script>
+    <script src="scripts/prettify/lang-css.js"> </script>
+    <!--[if lt IE 9]>
+      <script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script>
+    <![endif]-->
+    <link type="text/css" rel="stylesheet" href="styles/prettify-tomorrow.css">
+    <link type="text/css" rel="stylesheet" href="styles/jsdoc-default.css">
+</head>
+
+<body>
+
+<div id="main">
+
+    <h1 class="page-title">Source: ui.js</h1>
+
+    
+
+
+
+    
+    <section>
+        <article>
+            <pre class="prettyprint source linenums"><code>function ViewerUI(viewer, options) {
+
+  var settings = {};
+
+  var element = viewer.element;
+  var viewer = viewer;
+
+  var viewerInit = false;
+  var viewerError = false;
+  var helpVisible = false;
+
+  var showLoaderID;
+   
+  function init(){
+
+  	$.extend(settings, options);
+ 
+    setupUI();
+
+    statusDisplay();
+
+    bindHelpToggle();
+
+  }
+
+  function setupUI() {
+
+	var helpOverlay = help();
+
+	mouseFeedback(element);
+
+	registerInputs();
+
+    element.addClass('viewer');
+
+    element.append(loader());
+
+     $('.loader').each(function(){
+      arrangeInCircle($(this));
+    });
+
+    element.append(helpOverlay);
+
+    showLoad();
+
+  }  
+
+  function registerInputs(){
+
+	$('.viewer-ui').click(function(){
+
+	   showLoad();
+
+       var view = $(this).data();
+
+       display(view);
+
+	});
+
+  }
+
+  function display(data){
+
+  	// TK put this stuff in the viewer itself, send an object with model and or texture to viewer
+
+    if (data.hasOwnProperty('model') &amp;&amp; data.hasOwnProperty('texture')) {
+
+      viewer.displayModelWithTexture(data.model, data.texture);
+
+    } else if (data.hasOwnProperty('model') &amp;&amp; (data.hasOwnProperty('texture') == false)) {
+
+  	  viewer.displayModel(data.model);
+
+    } else if (data.hasOwnProperty('texture') &amp;&amp; (data.hasOwnProperty('model') == false)) {	
+    
+      viewer.displayTexture(data.texture);
+
+    } 
+
+  }
+
+   /** viewer status **/
+
+  function statusDisplay(){	
+
+    element.on('viewer.initialized', onInit);
+
+    element.one('viewer.switchtexture viewer.modelready', onInitLoad);
+
+    element.on('viewer.switchtexture viewer.modelready', onReady);
+
+    element.on("viewer.error", onError);
+
+  }
+
+  function displayDefault() {
+
+    $('.viewer-ui').each(function(){
+
+  	  var view = $(this).data();
+
+  	  if (view.hasOwnProperty('defaultView')){display(view);}
+
+    });
+
+  }
+
+  function onInit(){
+
+      displayDefault();
+
+      showControls();
+  }
+
+  function onInitLoad(){
+
+  	 window.requestAnimationFrame( function(){
+
+   	 	viewerInit = true;
+
+   	    element.addClass('show-viewer');
+
+   	  });
+
+  }
+
+  function onReady(){
+
+     window.requestAnimationFrame( function(){
+
+        viewerError = false;
+
+        showViewer();
+     
+      });
+  }
+
+  function onError(error){
+
+  	console.log("error", error);
+
+    showError();
+
+    viewerError = true;
+
+  }
+
+function showViewer(){
+
+  element.addClass('show-viewer');
+
+  showControls();
+
+  hideError();
+
+  hideLoad();
+
+}
+
+function showControls() {
+
+  $('.viewer-controls').css('display', 'block');
+
+  $('.viewer-help-show').css('display', 'block');
+
+}
+
+function hideControls() {
+
+  $('.viewer-controls').css('display', 'none');
+
+  $('.viewer-help-show').css('display', 'none');
+
+}
+
+/** error status **/
+
+function showError(){
+
+  $('.error-overlay').addClass('show-status');
+
+  hideLoad();
+
+  hideControls();
+
+  viewer.stop();
+
+}
+
+function hideError(){
+  
+  $('.error-overlay').removeClass('show-status');
+
+  showControls();
+
+  viewer.start();
+
+}
+
+/** loading status **/ 
+
+function showLoad(){
+
+  showLoaderID = window.setTimeout( function(){
+
+    $('.status').addClass('show-status');
+
+  }, 
+  25);
+
+}
+
+function hideLoad() {
+
+  window.clearTimeout(showLoaderID);	
+
+  $('.status').removeClass('show-status');
+
+}
+
+/** help overlay **/
+
+function bindHelpToggle() {
+
+  $('.viewer-help-show').click( function() {
+    showHelp()
+  });
+    
+  $('.viewer-help-close').click( function() {  
+    hideHelp();
+  });
+
+}
+
+function showHelp(){
+
+  helpVisible = true;
+
+  hideControls();
+
+  $('.viewer-help-overlay').css('display', 'block');
+
+  if (viewerError) { hideError(); }
+
+}
+
+function hideHelp(){
+
+  helpVisible = false;
+
+  $('.viewer-help-overlay').css('display', 'none'); 
+
+  showControls();
+
+  if (viewerError) { showError(); }
+
+}
+
+/** mouse feedback **/
+
+  function mouseFeedback(){
+
+  	element.addClass('viewer-interact');
+   
+    element.mousedown(function(){
+       onMouseDown(element);
+     });
+    element.mouseup(function(){
+      onMouseUp(element);
+    });
+    element.mouseleave(function(){
+      onMouseOut(element);
+    });
+
+  }
+
+  /** @private */
+  function onMouseDown() {
+  
+     element.addClass('viewer-interacting');
+     element.removeClass('viewer-interact');
+     
+   }
+   
+   /** @private */
+   function onMouseUp() {
+   
+     mouseDown = false;
+     element.removeClass('viewer-interacting');
+     element.addClass('viewer-interact');
+     
+   }
+   
+   /** @private */
+   function onMouseOut() {
+   
+     element.removeClass('viewer-interacting');
+     element.addClass('viewer-interact');
+     
+   }
+
+   function arrangeInCircle(element) {
+    var elements = element.children();
+    var maxDimension = Math.max(elements.first().outerWidth(), elements.first().outerHeight());
+    var childRadius = maxDimension / 2;
+    var radius = (element.innerWidth() / 2) - childRadius;
+    
+    var childWidth = elements.first().outerWidth();
+    var childHeight = elements.first().outerHeight();
+    
+    var numberOfElements = elements.length;
+    var angleStep = 360 / numberOfElements;
+    var stepCount = 0;
+    
+    elements.each( function() {
+      var angle = angleStep * stepCount;
+      var rotate = "rotate("+ angle +"deg)";
+      var revRotate = "rotate(-"+ angle +"deg)";
+      var transform;
+      
+      var initPosition = element.innerWidth() / 2;
+      var initTranslate = "translate("+ (initPosition - (childWidth / 2)) +"px," + (initPosition - (childHeight / 2)) + "px)";
+      var translate =  "translate(0, -"+ radius +"px)";
+      transform = initTranslate + rotate + translate;
+
+      $(this).css("transform", transform);
+      stepCount++;
+    });
+    
+  }
+
+   /** dumb template functions **/
+
+   function loader(){
+
+     var htmlStr = "&lt;div class='status'>&lt;div class='status-content'>&lt;div class='loader load-anim'>"
+   
+     for (var i =0;i &lt;= 19;i++){
+       htmlStr += "&lt;div class='dot'>&lt;/div>"
+     }
+
+     htmlStr += "&lt;/div>&lt;/div>&lt;/div>"
+
+     return htmlStr;
+
+   }
+
+   function help() {
+
+     var htmlStr = "&lt;div class='viewer-help-overlay'>&lt;div class='viewer-help-control'>&lt;button class='viewer-help-close btn'>X&lt;/button>&lt;/div>"
+      
+     htmlStr += "&lt;div class='viewer-controls-help'>&lt;div class='gesture'>&lt;div class='pointer swipe-animate'>&lt;/div>&lt;p class='control-description'>&lt;b>To Rotate:&lt;/b> Swipe or click and drag with your mouse.&lt;/p>&lt;/div>"
+
+     htmlStr += "&lt;div class='gesture'>&lt;div class='bubble-container'>&lt;div class='pointer bubble-pointer-one bubble-animate-one'>&lt;/div>&lt;div class='pointer bubble-pointer-two bubble-animate-two'>&lt;/div>&lt;/div>&lt;p class='control-description'>&lt;b>To Zoom In/Out:&lt;/b> Double tap or double click.&lt;/p>&lt;/div>"
+
+     htmlStr += "&lt;div class='gesture'>&lt;div class='pan-container'>&lt;div class='pointer pan-animate'>&lt;/div>&lt;/div>&lt;p class='control-description'>&lt;b>To Pan:&lt;/b> Vertical swipe / touch hold and move vertically &lt;br/>or click and drag vertically.&lt;/p>&lt;/div>"
+       
+     htmlStr += "&lt;/div>&lt;/div>" 
+
+     var helpBtn = "&lt;div class='viewer-help-control'>&lt;button class='viewer-help-show btn' title='Controls Help'>?&lt;/button>&lt;/div>"
+
+     var errorStatus = "&lt;div class='error-overlay'>&lt;div class='viewer-error error-anim'>Sorry, this 360° view is unavailable&lt;/div>&lt;/div>"
+
+     return errorStatus + helpBtn + htmlStr;
+
+   }
+
+   init();
+
+   return this;
+}</code></pre>
+        </article>
+    </section>
+
+
+
+
+</div>
+
+<nav>
+    <h2><a href="index.html">Home</a></h2><h3>Namespaces</h3><ul><li><a href="ControlUtils.html">ControlUtils</a></li></ul><h3>Classes</h3><ul><li><a href="CameraDollyControl.html">CameraDollyControl</a></li><li><a href="MeshControl.html">MeshControl</a></li><li><a href="TouchTracker.html">TouchTracker</a></li><li><a href="Viewer.html">Viewer</a></li></ul>
+</nav>
+
+<br class="clear">
+
+<footer>
+    Documentation generated by <a href="https://github.com/jsdoc/jsdoc">JSDoc 3.6.3</a> on Tue Mar 17 2020 13:30:50 GMT-0700 (Pacific Daylight Time)
+</footer>
+
+<script> prettyPrint(); </script>
+<script src="scripts/linenumber.js"> </script>
+</body>
+</html>

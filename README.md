@@ -1,7 +1,8 @@
 # viewer
-WebGL Leggsy viewer 
+WebGL viewer for products (in this case, leggings)
 
 See the example Viewer here: 
-https://bombsheller.github.io/viewer/
+https://atomiro.github.io/viewer/
 
-and read the [docs in the wiki](https://github.com/Bombsheller/viewer/wiki)! 
+See the documentation: 
+https://atomiro.github.io/viewer/documentation
