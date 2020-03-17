@@ -1,7 +1,4 @@
 # viewer
-WebGL Leggsy viewer 
+WebGL viewer for products (in this case, leggings)
 
-See the example Viewer here: 
-https://bombsheller.github.io/viewer/
-
-and read the [docs in the wiki](https://github.com/Bombsheller/viewer/wiki)! 
+documentation and example provided, run locally with your favorite webserver or ```python -m SimpleHTTPServer```

@@ -1,7 +1,10 @@
 body{
-  background-color: rgb(25, 0, 25);
+  background-color:#333;
   color: #eee;
   font-family: "Arial", sans-serif;
+
+  width: 80%;
+  margin: 10px auto 100px auto;
 }
 
 ul {
@@ -19,16 +22,18 @@ kbd {
 }
 
 .container {
-  width: 80%;
-  margin: 10px auto 100px auto;
+
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  grid-gap: 20px;
 }
 
 a {
-  color: #e5e5e5;
+  color: #FFF;
 }
 
 a:visited {
-  color: #777;
+  color: #e3e3e3;
 }
 
 p {
@@ -48,7 +53,7 @@ p {
 .preview { 
   position: relative;
   height: 100%;
-  width: 50%;
+  width: 100%;
       
   -webkit-transition: opacity .3s ease-in-out;
   -moz-transition: opacity .3s ease-in-out;
@@ -62,12 +67,23 @@ p {
 
 button.viewer-ui {
   color: #000;
-  background: linear-gradient(#ed4699, #ed44DD);
+  background: #BBB;
   border: 1px solid #FFF;
   border-radius: 12px;
   padding: 6px 8px;
   font-size: 16px;
   font-weight: bold;
 } 
-     
+
+@media screen and (max-width: 920px ){
+
+  .container {
+
+    grid-template-columns: 1fr;
+
+    width: 70%;
+    margin: 0 auto;
+  }
+
 }
+     

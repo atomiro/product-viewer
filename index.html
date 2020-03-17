@@ -59,20 +59,21 @@
 </head>
 
 <body>
-  <div class="container">
-  <h1>Design Viewer</h1>
+  <h1>Viewer</h1>
 
+  <div class="container">
   <div class="preview"></div>
 
   <div class="controls">
-    <button class="render-control">Stop</button>
     
-    <p>
-     <button class="viewer-ui" data-model="WWBXSModel">XS Model</button>
-     <button class="viewer-ui" data-model="WWB3XLModel">3XL Model</button>
-    </p> 
+    <div>
+      <p>View a model with the current texture</p>
+      <button class="viewer-ui" data-model="WWBXSModel">XS Model</button>
+      <button class="viewer-ui" data-model="WWB3XLModel">3XL Model</button>
+    </div> 
 
-    <p>
+    <div>
+      <p>View a model with a specific texture</p>
       <button class="viewer-ui" data-model="WWBXSModel" data-texture="Azaleaa">
       XS Model / Azalea</button>
       <button class="viewer-ui" data-model="WWBXSModel" data-texture="Bismuth">
@@ -81,18 +82,17 @@
       3X Model / Azalea</button>
       <button class="viewer-ui" data-model="WWB3XLModel" data-texture="Bismuth" data-default-view >
       3X Model / Bismuth</button>
-    </p>  
+    </div>  
    
-   <p>
+   <div>
+    <p>View a texture on the current model</p>
      <button class="viewer-ui" 
      data-texture="Azalea">Azalea</button>
      <button class="viewer-ui" 
      data-texture="Bismuth">Bismuth</button>
-   </p>  
-   
-   <p>
-     <button class="idle">Spin</button>
-   </p>
+   </div>  
+
+   <p> read the <a href="/documentation/Viewer.html">documentation</a></p>
    
   </div>
 
