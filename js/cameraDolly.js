@@ -54,8 +54,6 @@ function CameraDollyControl(camera, rendererElement, options) {
   var zoomingOut = false;
   
   var progress = 0;
-
-  var scaleFactor = .07;
   
   var self = this;
 
@@ -86,7 +84,9 @@ function CameraDollyControl(camera, rendererElement, options) {
     
   }
 
-  function updateZoom(){
+
+   /** @private */
+  function updateZoom() {
 
     self.panLockAt = Math.abs(settings.maxZoom) - 3;
     zoomThreshold = Math.abs(settings.maxZoom - settings.minZoom / 2);
@@ -316,8 +316,8 @@ function CameraDollyControl(camera, rendererElement, options) {
     
   }
   
-  /** @private 
-  @param {THREE.MeshObject} object 
+  /** @private
+  @param {THREE.MeshObject} object
   */
   function centerOnObject(object) {
   
@@ -449,7 +449,7 @@ function CameraDollyControl(camera, rendererElement, options) {
   this.unbindControls = unbindControls;
   
   /** Position camera so that object fits the canvas
-  @param {THREE.MeshObject} object - THREE Mesh Object 
+  @param {THREE.MeshObject} object - THREE Mesh Object
   @function
   */
   this.focus = function(object) {
@@ -463,7 +463,7 @@ function CameraDollyControl(camera, rendererElement, options) {
 
     var distance = objHeight * 0.5 / Math.tan(fovRadians * 0.5);
 
-    //back the camera up a little bit
+    // back the camera up a little bit
     distance += 4;
 
     camera.position.z = distance;
@@ -477,7 +477,7 @@ function CameraDollyControl(camera, rendererElement, options) {
 
     centerOnObject(object);
       
-  }
+  };
   
   return this;
 

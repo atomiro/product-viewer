@@ -1,8 +1,4 @@
 # viewer
 WebGL viewer for products (in this case, leggings)
 
-See the example Viewer here: 
-https://atomiro.github.io/viewer/
-
-See the documentation: 
-https://atomiro.github.io/viewer/documentation
+documentation and example provided, run locally with your favorite webserver or ```python -m SimpleHTTPServer```

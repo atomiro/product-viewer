@@ -12,7 +12,7 @@ function MeshControl(meshes, rendererElement, options) {
    
      mouseSpeedFactor: .7,
      touchSpeedFactor: 15,
-     idleSpeed: 0.006
+     idleSpeed: 0.006,
      
    };
    
@@ -97,9 +97,7 @@ function MeshControl(meshes, rendererElement, options) {
    */
    function onMouseDown() {
    
-     if (idling){
-       idling = false;
-     }
+     if (idling) { idling = false; }
      
      mouseDown = true;
      
@@ -137,28 +135,29 @@ function MeshControl(meshes, rendererElement, options) {
      @private
      @param {event} event - touch/pointer event
    */
-   function onTouchMove(event) {
+  function onTouchMove(event) {
    
      if (event.touches.length == 1) {
      
-       if (touchTracker.axis == 'HORIZONTAL') {
-       
-         event.preventDefault();
-       
-         if (idling){
-           idling = false;
-         }
-          
-          var angle = (touchTracker.speedX * Math.PI / 180)
-            * settings.touchSpeedFactor;
-            
-          rotateTo(angle);
+      if (touchTracker.axis == 'HORIZONTAL') {
+      
+        event.preventDefault();
+      
+        if (idling) { 
+
+          idling = false; 
           
         }
+      
+        var angle = (touchTracker.speedX * Math.PI / 180) * settings.touchSpeedFactor;
+      
+        rotateTo(angle);
+      
+      }
         
-     }
+    }
      
-   }
+  }
    
    /**
      @private
@@ -197,27 +196,28 @@ function MeshControl(meshes, rendererElement, options) {
         
    }
    
-   /** 
-   Idle animation - call within main render loop 
-   @function 
+   /**
+   Idle animation - call within main render loop
+   @function
    */
    this.animate = function(){
-     
+    
      if (idling){
      
        for (var i = 0; i < meshes.length; i++) {
          meshes[i].rotation.y += settings.idleSpeed
+
        }
      
      }
      
-   }
+   };
    
-   this.idle = function() {
-   
-     idling = true;
-   
-   }
+  this.idle = function() { 
+
+    idling = true;
+
+  };
    
    /**
    Register event listeners to the rendererElement
